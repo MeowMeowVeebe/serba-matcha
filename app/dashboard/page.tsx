@@ -3,11 +3,41 @@
 import { useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { logout, me, type AuthUser } from "@/lib/authClient";
 
 export default function Page() {
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    void (async () => {
+      setIsLoadingUser(true);
+      const res = await me();
+      if (!res.ok) {
+        router.push("/login");
+        return;
+      }
+      setUser(res.user);
+      setIsLoadingUser(false);
+    })();
+  }, [router]);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      router.push("/login");
+    }
+  };
 
   // INIT CHART
   useEffect(() => {
@@ -71,8 +101,29 @@ export default function Page() {
     <>
       <div className="sidebar">
         <h2>Serba Matchia</h2>
-        <a href="#">Dashboard</a>
-		<Link href="/settings">Settings</Link>
+
+        {isLoadingUser ? (
+          <div className="sidebar-user sidebar-user-skeleton" aria-hidden />
+        ) : user ? (
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{user.name.slice(0, 1).toUpperCase()}</div>
+            <div className="sidebar-user-meta">
+              <p className="sidebar-user-name">{user.name}</p>
+              <p className="sidebar-user-email">{user.email}</p>
+            </div>
+          </div>
+        ) : null}
+
+        <Link className="nav-link active" href="/dashboard">
+          Dashboard
+        </Link>
+        <Link className="nav-link" href="/settings">
+          Settings
+        </Link>
+
+        <button className="nav-link nav-link-btn" onClick={handleLogout} disabled={isLoggingOut}>
+          {isLoggingOut ? "Logging out..." : "Logout"}
+        </button>
       </div>
 
       <div className="main">

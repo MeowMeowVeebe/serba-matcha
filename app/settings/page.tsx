@@ -1,31 +1,100 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { logout, logoutAll, me, updateProfile, type AuthUser } from "@/lib/authClient";
 import { useAlert } from "../../context/AlertContext";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [name, setName] = useState("Ray Alland");
-  const [email] = useState("john@example.com");
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
 
   const { showAlert } = useAlert();
+
+  const canSave = useMemo(() => {
+    if (isSaving) return false;
+    // Boleh save name saja tanpa old password
+    if (newPassword && !oldPassword) return false;
+    return true;
+  }, [isSaving, newPassword, oldPassword]);
 
   useEffect(() => {
     document.body.className = theme;
   }, [theme]);
 
-  const handleSave = () => {
-    if (!oldPassword) {
-      showAlert("Masukkan password lama terlebih dahulu!");
-      return;
+  useEffect(() => {
+    void (async () => {
+      setIsLoadingUser(true);
+      const res = await me();
+      if (!res.ok) {
+        router.push("/login");
+        return;
+      }
+      setUser(res.user);
+      setName(res.user.name);
+      setEmail(res.user.email);
+      setIsLoadingUser(false);
+    })();
+  }, [router]);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      router.push("/login");
     }
-    // logika update password/name di server bisa ditambahkan di sini
-    showAlert("Pengaturan berhasil disimpan!");
-    setOldPassword("");
-    setNewPassword("");
+  };
+
+  const handleLogoutAll = async () => {
+    if (isLoggingOutAll) return;
+    setIsLoggingOutAll(true);
+    try {
+      const res = await logoutAll();
+      showAlert(res.message ?? "Logout semua device.");
+    } finally {
+      setIsLoggingOutAll(false);
+      router.push("/login");
+    }
+  };
+
+  const handleSave = async () => {
+    if (!canSave) return;
+
+    setIsSaving(true);
+    try {
+      const res = await updateProfile({
+        name,
+        oldPassword: oldPassword || undefined,
+        newPassword: newPassword || undefined,
+      });
+
+      if (!res.ok) {
+        showAlert(res.message);
+        return;
+      }
+
+      setUser(res.user);
+      setName(res.user.name);
+      setEmail(res.user.email);
+      showAlert(res.message);
+      setOldPassword("");
+      setNewPassword("");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -33,11 +102,38 @@ export default function SettingsPage() {
       {/* SIDEBAR */}
       <div className="sidebar">
         <h2>Serba Matchia</h2>
-        <Link href="/dashboard">Dashboard</Link>
+
+        {isLoadingUser ? (
+          <div className="sidebar-user sidebar-user-skeleton" aria-hidden />
+        ) : user ? (
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{user.name.slice(0, 1).toUpperCase()}</div>
+            <div className="sidebar-user-meta">
+              <p className="sidebar-user-name">{user.name}</p>
+              <p className="sidebar-user-email">{user.email}</p>
+            </div>
+          </div>
+        ) : null}
+
+        <Link className="nav-link" href="/dashboard">
+          Dashboard
+        </Link>
+        <Link className="nav-link active" href="/settings">
+          Settings
+        </Link>
+
+        <button className="nav-link nav-link-btn" onClick={handleLogout} disabled={isLoggingOut}>
+          {isLoggingOut ? "Logging out..." : "Logout"}
+        </button>
       </div>
 
       <div className="main">
-        {/* HEADER DIHAPUS */}
+        <div className="header">
+          <h2>Settings</h2>
+          <button onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}>
+            Toggle Dark Mode
+          </button>
+        </div>
 
         <div className="settings-grid">
           {/* PROFILE */}
@@ -91,8 +187,11 @@ export default function SettingsPage() {
         </div>
 
         <div className="action-bar">
-          <button className="primary-btn" onClick={handleSave}>
-            Simpan Perubahan
+          <button className="primary-btn" onClick={handleSave} disabled={!canSave}>
+            {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+          </button>
+          <button className="secondary-btn" onClick={handleLogoutAll} disabled={isLoggingOutAll}>
+            {isLoggingOutAll ? "Logging out..." : "Logout semua device"}
           </button>
         </div>
       </div>
