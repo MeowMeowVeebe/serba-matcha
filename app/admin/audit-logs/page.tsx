@@ -1,196 +1,173 @@
-"use client";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/server/prisma";
+import { getSessionPayloadFromNextCookies } from "@/lib/server/nextAuthSession";
+import { findUserById } from "@/lib/server/userStore";
+import { ensureDefaultAdminPermissions } from "@/lib/server/rbacBootstrap";
+import { bootstrapAdminIfNeeded } from "@/lib/server/bootstrapAdmin";
+import { requirePermission } from "@/lib/server/rbac";
+import { PERMISSIONS } from "@/lib/server/permissions";
+import AuditLogsClient, { type AdminAuditInitialData } from "./AuditLogsClient";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { logout, me, type AuthUser } from "@/lib/authClient";
+const DEFAULT_PAGE_SIZE = 20;
 
-type LogRow = {
-  id: string;
-  action: string;
-  userId: string | null;
-  ip: string | null;
-  meta: string | null;
-  createdAt: string;
-};
-
-export default function AdminAuditLogsPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
-
-  const [action, setAction] = useState("");
-  const [q, setQ] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
-  const [total, setTotal] = useState(0);
-
-  const [rows, setRows] = useState<LogRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const hasNext = useMemo(() => rows.length === pageSize, [rows.length, pageSize]);
-
-  const load = async (params?: { action?: string; q?: string; page?: number }) => {
-    setIsLoading(true);
-    setError(null);
-
-    const u = await me();
-    if (!u.ok) {
-      router.push("/login");
-      return;
-    }
-    setUser(u.user);
-
-    const nextAction = params?.action ?? action;
-    const nextQ = params?.q ?? q;
-    const nextPage = params?.page ?? page;
-
-    const url = new URL("/api/admin/audit-logs", window.location.origin);
-    if (nextAction) url.searchParams.set("action", nextAction);
-    if (nextQ) url.searchParams.set("q", nextQ);
-    url.searchParams.set("page", String(nextPage));
-    url.searchParams.set("pageSize", String(pageSize));
-
-    const res = await fetch(url.toString());
-    if (res.status === 401) {
-      router.push("/login");
-      return;
-    }
-    if (res.status === 403) {
-      setError("Forbidden: kamu bukan admin.");
-      setIsLoading(false);
-      return;
-    }
-
-    const data = (await res.json().catch(() => null)) as
-      | { logs?: LogRow[]; total?: number; page?: number }
-      | null;
-
-    setRows(Array.isArray(data?.logs) ? data!.logs! : []);
-    setTotal(typeof data?.total === "number" ? data.total : 0);
-    setPage(typeof data?.page === "number" ? data.page : nextPage);
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    void load({ page: 1 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
-
-  const handleLogout = async () => {
-    await logout();
-    router.push("/login");
-  };
-
-  return (
-    <>
-      <div className="sidebar">
-        <h2>Serba Matchia</h2>
-        {user ? (
-          <div className="sidebar-user">
-            <div className="sidebar-avatar">{user.name.slice(0, 1).toUpperCase()}</div>
-            <div className="sidebar-user-meta">
-              <p className="sidebar-user-name">{user.name}</p>
-              <p className="sidebar-user-email">{user.email}</p>
-            </div>
-          </div>
-        ) : null}
-
-        <Link className="nav-link" href="/dashboard">Dashboard</Link>
-        <Link className="nav-link" href="/settings">Settings</Link>
-        <Link className="nav-link" href="/admin/users">Admin Users</Link>
-        <Link className="nav-link active" href="/admin/audit-logs">Audit Logs</Link>
-
-        <button className="nav-link nav-link-btn" onClick={handleLogout}>Logout</button>
-      </div>
-
-      <div className="main">
-        <div className="header">
-          <h2>Admin - Audit Logs</h2>
-          <span />
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <h3>Audit Logs</h3>
-            <p>Total: {total}</p>
-          </div>
-
-          <div className="action-bar" style={{ justifyContent: "space-between", marginTop: 12 }}>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <input
-                style={{ padding: 10, borderRadius: 12, border: "1px solid rgba(0,0,0,0.14)", minWidth: 220 }}
-                placeholder="Filter action (contains)"
-                value={action}
-                onChange={(e) => setAction(e.target.value)}
-              />
-              <input
-                style={{ padding: 10, borderRadius: 12, border: "1px solid rgba(0,0,0,0.14)", minWidth: 220 }}
-                placeholder="Cari (meta/ip/action)"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-              />
-              <button className="secondary-btn" onClick={() => load({ action, q, page: 1 })} disabled={isLoading}>
-                Filter
-              </button>
-              <button
-                className="secondary-btn"
-                onClick={() => {
-                  setAction("");
-                  setQ("");
-                  void load({ action: "", q: "", page: 1 });
-                }}
-                disabled={isLoading}
-              >
-                Reset
-              </button>
-            </div>
-
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button className="secondary-btn" onClick={() => load({ page: Math.max(1, page - 1) })} disabled={isLoading || page <= 1}>
-                Prev
-              </button>
-              <span style={{ fontSize: 13, opacity: 0.8 }}>Page {page}</span>
-              <button className="secondary-btn" onClick={() => load({ page: page + 1 })} disabled={isLoading || !hasNext}>
-                Next
-              </button>
-            </div>
-          </div>
-
-          {error ? <div className="auth-form-error">{error}</div> : null}
-
-          {isLoading ? (
-            <p style={{ marginTop: 12 }}>Loading...</p>
-          ) : (
-            <div className="table-container" style={{ marginTop: 12 }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Waktu</th>
-                    <th>Action</th>
-                    <th>UserId</th>
-                    <th>IP</th>
-                    <th>Meta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.id}>
-                      <td>{new Date(r.createdAt).toLocaleString()}</td>
-                      <td>{r.action}</td>
-                      <td>{r.userId ?? "-"}</td>
-                      <td>{r.ip ?? "-"}</td>
-                      <td style={{ maxWidth: 360, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {r.meta ?? "-"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
+function parsePositiveInt(value: string | null, fallback: number) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  if (n <= 0) return fallback;
+  return Math.floor(n);
 }
+
+export default async function AdminAuditLogsPage({
+  searchParams,
+}: {
+  searchParams?: {
+    action?: string;
+    q?: string;
+    meta?: string;
+    cursor?: string;
+    dir?: string;
+    targetUserId?: string;
+    targetEmail?: string;
+    resource?: string;
+    statusCode?: string;
+    createdAtFrom?: string;
+    createdAtTo?: string;
+  };
+}) {
+  const session = getSessionPayloadFromNextCookies();
+  if (!session) redirect("/login");
+
+  const me = await findUserById(session.sub);
+  if (!me) redirect("/login");
+
+  await bootstrapAdminIfNeeded();
+  await ensureDefaultAdminPermissions();
+
+  const ok = await requirePermission({ userId: me.id, permissionName: PERMISSIONS.ADMIN_AUDIT_READ });
+  if (!ok) redirect("/dashboard");
+
+  const action = (searchParams?.action ?? "").trim();
+  const q = (searchParams?.q ?? "").trim();
+  const meta = (searchParams?.meta ?? "0") === "1";
+  const cursor = (searchParams?.cursor ?? "").trim();
+  const dir = (searchParams?.dir ?? "next") === "prev" ? "prev" : "next";
+
+  const targetUserId = (searchParams?.targetUserId ?? "").trim();
+  const targetEmail = (searchParams?.targetEmail ?? "").trim();
+  const resource = (searchParams?.resource ?? "").trim();
+  const statusCodeRaw = (searchParams?.statusCode ?? "").trim();
+  const createdAtFromRaw = (searchParams?.createdAtFrom ?? "").trim();
+  const createdAtToRaw = (searchParams?.createdAtTo ?? "").trim();
+
+  const pageSize = DEFAULT_PAGE_SIZE;
+
+  // Mirror API search optimization: meta is optional.
+  const where: any = {};
+  if (action) where.action = { contains: action };
+  if (targetUserId) where.targetUserId = targetUserId;
+  if (targetEmail) where.targetEmail = { contains: targetEmail, mode: "insensitive" };
+  if (resource) where.resource = { contains: resource, mode: "insensitive" };
+  if (statusCodeRaw) {
+    const n = Number(statusCodeRaw);
+    if (Number.isFinite(n)) where.statusCode = Math.floor(n);
+  }
+  if (createdAtFromRaw) {
+    const d = new Date(createdAtFromRaw);
+    if (!Number.isNaN(d.getTime())) where.createdAt = { ...(where.createdAt as any), gte: d };
+  }
+  if (createdAtToRaw) {
+    const d = new Date(createdAtToRaw);
+    if (!Number.isNaN(d.getTime())) where.createdAt = { ...(where.createdAt as any), lte: d };
+  }
+
+  if (q) {
+    where.OR = meta
+      ? [{ meta: { contains: q } }, { ip: { contains: q } }, { action: { contains: q } }]
+      : [{ ip: { contains: q } }, { action: { contains: q } }];
+  }
+
+  // Server page uses the same cursor logic as API, for fast initial render.
+  let cursorCreatedAt: Date | null = null;
+  let cursorId: string | null = null;
+  if (cursor) {
+    const [createdAtIso, id] = cursor.split("|");
+    if (createdAtIso && id) {
+      const d = new Date(createdAtIso);
+      if (!Number.isNaN(d.getTime())) {
+        cursorCreatedAt = d;
+        cursorId = id;
+      }
+    }
+  }
+
+  const isPrev = dir === "prev";
+  const orderBy = isPrev ? [{ createdAt: "asc" as const }, { id: "asc" as const }] : [{ createdAt: "desc" as const }, { id: "desc" as const }];
+
+  const cursorWhere =
+    cursorCreatedAt && cursorId
+      ? isPrev
+        ? {
+            OR: [{ createdAt: { gt: cursorCreatedAt } }, { createdAt: cursorCreatedAt, id: { gt: cursorId } }],
+          }
+        : {
+            OR: [{ createdAt: { lt: cursorCreatedAt } }, { createdAt: cursorCreatedAt, id: { lt: cursorId } }],
+          }
+      : null;
+
+  const finalWhere = cursorWhere ? { AND: [where, cursorWhere] } : where;
+
+  const [total, rows] = await Promise.all([
+    // Only compute total for first load (no cursor)
+    cursor ? Promise.resolve(null) : prisma.auditLog.count({ where }),
+    prisma.auditLog.findMany({
+      where: finalWhere,
+      orderBy,
+      select: { id: true, action: true, userId: true, ip: true, metaPreview: true, meta: false, createdAt: true },
+      take: pageSize + 1,
+    }),
+  ]);
+
+  const hasMore = rows.length > pageSize;
+  const windowRows = hasMore ? rows.slice(0, pageSize) : rows;
+  const normalized = isPrev ? windowRows.slice().reverse() : windowRows;
+
+  const nextCursor =
+    normalized.length > 0
+      ? `${normalized[normalized.length - 1].createdAt.toISOString()}|${normalized[normalized.length - 1].id}`
+      : null;
+  const prevCursor = normalized.length > 0 ? `${normalized[0].createdAt.toISOString()}|${normalized[0].id}` : null;
+
+  const initial: AdminAuditInitialData = {
+    query: {
+      action,
+      q,
+      meta,
+      targetUserId,
+      targetEmail,
+      resource,
+      statusCode: statusCodeRaw,
+      createdAtFrom: createdAtFromRaw,
+      createdAtTo: createdAtToRaw,
+      cursor,
+      dir,
+    },
+    pageSize,
+    total,
+    hasMore,
+    nextCursor,
+    prevCursor,
+    rows: normalized.map((r) => ({
+      id: r.id,
+      action: r.action,
+      userId: r.userId,
+      ip: r.ip,
+      metaPreview: (r as any).metaPreview ?? null,
+      meta: null,
+      createdAt: r.createdAt.toISOString(),
+    })),
+  };
+
+  return <AuditLogsClient initial={initial} />;
+}
+
+// (Client implementation moved to AuditLogsClient.tsx)

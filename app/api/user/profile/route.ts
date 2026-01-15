@@ -4,6 +4,8 @@ import { hashPassword, verifyPassword } from "@/lib/server/password";
 import { findUserById, updateUserProfile } from "@/lib/server/userStore";
 import { logAudit } from "@/lib/server/auditLog";
 import { getClientIp } from "@/lib/server/rateLimit";
+import { revokeAllRefreshTokensForUser } from "@/lib/server/refreshTokens";
+import { clearAuthCookies } from "@/lib/server/authCookies";
 
 export async function PATCH(req: Request) {
   const session = getSessionPayloadFromRequest(req);
@@ -59,12 +61,16 @@ export async function PATCH(req: Request) {
       password: hashPassword(newPassword),
     });
 
+    // keamanan: revoke semua refresh token (logout semua device), supaya sesi lama invalid
+    await revokeAllRefreshTokensForUser(user.id);
     await logAudit({ action: "user.profile.change_password", userId: user.id, ip: getClientIp(req) });
 
-    return NextResponse.json({
-      message: "Pengaturan berhasil disimpan.",
+    const res = NextResponse.json({
+      message: "Pengaturan berhasil disimpan. Silakan login ulang.",
       user: { id: updated.id, email: updated.email, name: updated.name },
     });
+    clearAuthCookies(res);
+    return res;
   }
 
   // Update name saja

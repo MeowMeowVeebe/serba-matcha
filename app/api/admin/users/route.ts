@@ -1,40 +1,21 @@
 import { NextResponse } from "next/server";
-import { getSessionPayloadFromRequest } from "@/lib/server/authSession";
 import { prisma } from "@/lib/server/prisma";
-import { findUserById } from "@/lib/server/userStore";
 import { logAudit } from "@/lib/server/auditLog";
-import { getClientIp } from "@/lib/server/rateLimit";
-import { assignRoleToUser, isAdmin } from "@/lib/server/rbac";
+import { PERMISSIONS } from "@/lib/server/permissions";
+import { requirePermissionOr403 } from "@/lib/server/apiGuards";
 
-function parseAdminEmails(): string[] {
-  const raw = process.env.ADMIN_EMAILS ?? "";
-  return raw
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
+import { withServerTiming } from "@/lib/server/observability";
 
 export async function GET(req: Request) {
-  const session = getSessionPayloadFromRequest(req);
-  if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  return withServerTiming("admin.users", async () => {
+  const auth = await requirePermissionOr403(req, {
+    permissionName: PERMISSIONS.ADMIN_USERS_READ,
+    auditAction: "admin.users.forbidden",
+  });
+  if (!auth.ok) return auth.res;
 
-  const me = await findUserById(session.sub);
-  if (!me) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-
-  const ip = getClientIp(req);
-
-  // RBAC: admin role.
-  // Bootstrap fallback: kalau email ada di ADMIN_EMAILS, auto-assign role admin (sekali) biar mudah setup.
-  const admins = parseAdminEmails();
-  if (admins.includes(me.email.toLowerCase())) {
-    await assignRoleToUser({ userId: me.id, roleName: "admin" });
-  }
-
-  const ok = await isAdmin(me.id);
-  if (!ok) {
-    await logAudit({ action: "admin.users.forbidden", userId: me.id, ip });
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
+  const me = auth.user;
+  const ip = auth.ip;
 
   const url = new URL(req.url);
   const qRaw = (url.searchParams.get("q") ?? "").trim();
@@ -76,24 +57,27 @@ export async function GET(req: Request) {
         email: true,
         name: true,
         createdAt: true,
-        roles: { select: { role: { select: { name: true } } } },
+        roles: { select: { roleId: true, role: { select: { name: true } } } },
       },
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
   ]);
 
-  return NextResponse.json({
-    page,
-    pageSize,
-    total,
-    q,
-    users: users.map((u) => ({
-      id: u.id,
-      email: u.email,
-      name: u.name,
-      createdAt: u.createdAt.toISOString(),
-      isAdmin: u.roles.some((r) => r.role.name === "admin"),
-    })),
+    return NextResponse.json({
+      page,
+      pageSize,
+      total,
+      q,
+      users: users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        createdAt: u.createdAt.toISOString(),
+        isAdmin: u.roles.some((r) => r.role.name === "admin"),
+        roles: u.roles.map((r) => ({ id: r.roleId, name: r.role.name })),
+      })),
+    });
   });
 }
+

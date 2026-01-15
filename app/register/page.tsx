@@ -79,17 +79,7 @@ export default function RegisterPage() {
         <aside className="auth-aside" aria-hidden>
           <div className="auth-brand">
             <div className="auth-logo">M</div>
-            <div>
-              <h1>Matchia</h1>
-              <p>Buat akun baru untuk mulai menggunakan aplikasi.</p>
-            </div>
           </div>
-
-          <ul className="auth-benefits">
-            <li>Proses pendaftaran cepat</li>
-            <li>UI rapi & responsif</li>
-            <li>Siap terhubung ke API</li>
-          </ul>
         </aside>
 
         <div className="auth-form">

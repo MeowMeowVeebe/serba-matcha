@@ -70,15 +70,9 @@ export default function ForgotPasswordPage() {
           <div className="auth-brand">
             <div className="auth-logo">M</div>
             <div>
-              <h1>Matchia</h1>
-              <p>Reset password akun kamu dengan aman.</p>
             </div>
           </div>
-          <ul className="auth-benefits">
-            <li>Instruksi dikirim via email</li>
-            <li>Respon aman (tidak bocorkan akun)</li>
-            <li>Siap dihubungkan ke SMTP</li>
-          </ul>
+         
         </aside>
 
         <div className="auth-form">

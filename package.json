@@ -7,10 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-
+    "test": "vitest run --maxWorkers=1",
+    "test:watch": "vitest",
+    "test:ci": "vitest run --reporter=verbose --maxWorkers=1",
+    "test:coverage": "vitest run --coverage --maxWorkers=1",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-
+    "seed": "node ./node_modules/tsx/dist/cli.mjs scripts/seed.ts",
+    "audit:cleanup": "node ./node_modules/tsx/dist/cli.mjs scripts/cleanupAuditLogs.ts",
+    "audit:exports": "node ./node_modules/tsx/dist/cli.mjs scripts/processAuditLogExports.ts",
+    "audit:exports:cleanup": "node ./node_modules/tsx/dist/cli.mjs scripts/cleanupExportFiles.ts",
     "prisma:generate:mysql": "prisma generate --schema prisma/schema.mysql.prisma",
     "prisma:migrate:mysql": "prisma migrate dev --schema prisma/schema.mysql.prisma"
   },
@@ -18,20 +24,25 @@
     "@prisma/client": "^6.2.1",
     "chart.js": "^4.5.1",
     "next": "16.1.1",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^7.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/supertest": "^6.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "next-test-api-route-handler": "^5.0.3",
     "prisma": "^6.2.1",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.17",
+    "@vitest/coverage-v8": "^4.0.17",
+    "tsx": "^4.20.5"
   }
 }

@@ -21,6 +21,11 @@ model User {
   resetTokens   PasswordResetToken[]
   refreshTokens RefreshToken[]
   roles         UserRole[]
+
+  // Common access patterns:
+  // - Admin user list sorted by createdAt desc
+  // - Lookups by email already covered by @unique
+  @@index([createdAt])
 }
 
 model PasswordResetToken {
@@ -65,18 +70,66 @@ model AuditLog {
   action    String
   userId    String?
   ip        String?
-  meta      String? // JSON string
+
+  // Materialized fields extracted from meta for faster filtering/search (optional)
+  targetUserId String?
+  targetEmail  String?
+  resource     String?
+  statusCode   Int?
+
+  // JSON string (full meta). Not always returned in list payload.
+  meta       String?
+  metaPreview String? // short preview string for list views
+
   createdAt DateTime @default(now())
 
+  // Common access patterns:
+  // - Admin audit log list sorted by createdAt desc
+  // - Filter by action/userId
+  @@index([createdAt])
   @@index([action, createdAt])
   @@index([userId, createdAt])
+  // Faster filtering for common incidents
+  @@index([targetUserId, createdAt])
+  @@index([targetEmail, createdAt])
+  @@index([resource, createdAt])
+  @@index([statusCode, createdAt])
+  @@index([targetEmail, statusCode, createdAt])
+  @@index([resource, statusCode, createdAt])
+}
+
+model Permission {
+  id   String @id @default(cuid())
+  name String @unique
+
+  roles RolePermission[]
+
+  // Fast ordered listing by name
+  @@index([name])
 }
 
 model Role {
   id    String @id @default(cuid())
   name  String @unique
 
-  users UserRole[]
+  users       UserRole[]
+  permissions RolePermission[]
+
+  // Fast ordered listing by name
+  @@index([name])
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
+
+  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
 }
 
 model UserRole {
@@ -90,4 +143,53 @@ model UserRole {
   @@unique([userId, roleId])
   @@index([userId])
   @@index([roleId])
+}
+
+// Small key-value store for one-time flags / app settings.
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+enum ExportJobStatus {
+  pending
+  running
+  completed
+  failed
+  cancelled
+}
+
+model AuditLogExportJob {
+  id        String          @id @default(cuid())
+  status    ExportJobStatus @default(pending)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  // Who requested (optional)
+  requestedByUserId String?
+
+  // Filters snapshot (stored as JSON string for flexibility)
+  filters String
+
+  // Output
+  fileName String?
+  mimeType String?
+  // File location relative to EXPORT_DIR
+  filePath String?
+
+  // Progress
+  rowsWritten Int @default(0)
+
+  // Queue/worker leasing
+  leaseUntil DateTime?
+  attempts   Int      @default(0)
+
+  // Legacy storage (kept for backward compatibility / migrations)
+  csvBase64 String?
+
+  error String?
+
+  @@index([status, createdAt])
+  @@index([requestedByUserId, createdAt])
 }

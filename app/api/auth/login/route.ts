@@ -8,7 +8,10 @@ import { createRefreshToken, cleanupRefreshTokens } from "@/lib/server/refreshTo
 import { checkRateLimit, getClientIp, tooManyRequests } from "@/lib/server/rateLimit";
 import { logAudit } from "@/lib/server/auditLog";
 
+import { withServerTiming } from "@/lib/server/observability";
+
 export async function POST(req: Request) {
+  return withServerTiming("auth.login", async () => {
   const ip = getClientIp(req);
   const rl = await checkRateLimit({
     key: `login:${ip}`,
@@ -67,4 +70,5 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ message: "Request tidak valid." }, { status: 400 });
   }
+  });
 }

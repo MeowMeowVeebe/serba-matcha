@@ -60,17 +60,9 @@ export default function LoginPage() {
         <aside className="auth-aside" aria-hidden>
           <div className="auth-brand">
             <div className="auth-logo">M</div>
-            <div>
-              <h1>Matchia</h1>
-              <p>Masuk untuk melanjutkan ke dashboard.</p>
-            </div>
           </div>
 
-          <ul className="auth-benefits">
-            <li>UI ringan & responsif</li>
-            <li>Mode terang/gelap</li>
-            <li>Notifikasi global</li>
-          </ul>
+         
         </aside>
 
         <div className="auth-form">

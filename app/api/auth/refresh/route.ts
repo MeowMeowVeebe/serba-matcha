@@ -4,11 +4,14 @@ import { rotateRefreshToken, cleanupRefreshTokens } from "@/lib/server/refreshTo
 import { findUserById } from "@/lib/server/userStore";
 import { signToken } from "@/lib/server/token";
 import { ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS } from "@/lib/server/authConfig";
-import { setAccessCookie, setRefreshCookie } from "@/lib/server/authCookies";
+import { setAccessCookie, setRefreshCookie, clearAuthCookies } from "@/lib/server/authCookies";
 import { checkRateLimit, getClientIp, tooManyRequests } from "@/lib/server/rateLimit";
 import { logAudit } from "@/lib/server/auditLog";
 
+import { withServerTiming } from "@/lib/server/observability";
+
 export async function POST(req: Request) {
+  return withServerTiming("auth.refresh", async () => {
   const ip = getClientIp(req);
   const rl = await checkRateLimit({
     key: `refresh:${ip}`,
@@ -21,6 +24,7 @@ export async function POST(req: Request) {
 
   const refresh = getRefreshTokenFromRequest(req);
   if (!refresh) {
+    await logAudit({ action: "auth.refresh.missing_token", ip });
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
@@ -28,8 +32,11 @@ export async function POST(req: Request) {
 
   const rotated = await rotateRefreshToken(refresh);
   if (!rotated) {
-    await logAudit({ action: "auth.refresh.failed", ip });
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    // kemungkinan: token revoked/expired/invalid. Hapus cookies supaya client tidak loop.
+    await logAudit({ action: "auth.refresh.invalid_token", ip });
+    const res = NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    clearAuthCookies(res);
+    return res;
   }
 
   const user = await findUserById(rotated.userId);
@@ -51,4 +58,5 @@ export async function POST(req: Request) {
 
   await logAudit({ action: "auth.refresh.success", userId: user.id, ip });
   return res;
+  });
 }

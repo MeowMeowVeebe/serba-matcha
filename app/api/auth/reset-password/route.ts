@@ -4,12 +4,16 @@ import { prisma } from "@/lib/server/prisma";
 import { hashPassword } from "@/lib/server/password";
 import { checkRateLimit, getClientIp, tooManyRequests } from "@/lib/server/rateLimit";
 import { logAudit } from "@/lib/server/auditLog";
+import { revokeAllRefreshTokensForUser } from "@/lib/server/refreshTokens";
+import { clearAuthCookies } from "@/lib/server/authCookies";
+import { withServerTiming } from "@/lib/server/observability";
 
 function sha256Hex(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
 export async function POST(req: Request) {
+  return withServerTiming("auth.reset_password", async () => {
   const ip = getClientIp(req);
   const rl = await checkRateLimit({
     key: `reset:${ip}`,
@@ -48,7 +52,12 @@ export async function POST(req: Request) {
 
   const row = await prisma.passwordResetToken.findUnique({
     where: { tokenHash },
-    include: { user: true },
+    select: {
+      id: true,
+      userId: true,
+      expiresAt: true,
+      consumedAt: true,
+    },
   });
 
   if (!row || row.consumedAt) {
@@ -79,7 +88,12 @@ export async function POST(req: Request) {
     }),
   ]);
 
+  // keamanan: invalidate semua refresh token (logout semua device)
+  await revokeAllRefreshTokensForUser(row.userId);
   await logAudit({ action: "auth.reset_password.success", userId: row.userId, ip });
 
-  return NextResponse.json({ message: "Password berhasil direset. Silakan login." });
+  const res = NextResponse.json({ message: "Password berhasil direset. Silakan login." });
+  clearAuthCookies(res);
+  return res;
+  });
 }

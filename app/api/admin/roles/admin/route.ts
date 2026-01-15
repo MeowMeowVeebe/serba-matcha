@@ -1,35 +1,19 @@
 import { NextResponse } from "next/server";
-import { getSessionPayloadFromRequest } from "@/lib/server/authSession";
-import { findUserById } from "@/lib/server/userStore";
 import { getClientIp } from "@/lib/server/rateLimit";
 import { logAudit } from "@/lib/server/auditLog";
-import { assignRoleToUser, isAdmin } from "@/lib/server/rbac";
+import { PERMISSIONS } from "@/lib/server/permissions";
+import { requirePermissionOr403 } from "@/lib/server/apiGuards";
+import { assignRoleToUser } from "@/lib/server/rbac";
 import { prisma } from "@/lib/server/prisma";
 
-function parseAdminEmails(): string[] {
-  const raw = process.env.ADMIN_EMAILS ?? "";
-  return raw
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
-
 async function ensureRequesterIsAdmin(req: Request) {
-  const session = getSessionPayloadFromRequest(req);
-  if (!session) return { ok: false as const, status: 401 };
+  const auth = await requirePermissionOr403(req, {
+    permissionName: PERMISSIONS.ADMIN_ROLES_WRITE,
+    auditAction: "admin.roles.forbidden",
+  });
+  if (!auth.ok) return { ok: false as const, status: auth.res.status };
 
-  const me = await findUserById(session.sub);
-  if (!me) return { ok: false as const, status: 401 };
-
-  const admins = parseAdminEmails();
-  if (admins.includes(me.email.toLowerCase())) {
-    await assignRoleToUser({ userId: me.id, roleName: "admin" });
-  }
-
-  const ok = await isAdmin(me.id);
-  if (!ok) return { ok: false as const, status: 403 };
-
-  return { ok: true as const, me };
+  return { ok: true as const, me: auth.user };
 }
 
 export async function POST(req: Request) {
