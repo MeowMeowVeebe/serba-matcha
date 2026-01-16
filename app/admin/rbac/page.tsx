@@ -13,11 +13,18 @@ export default function AdminRbacPage() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [permQuery, setPermQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const selectedRole = useMemo(() => roles.find((r) => r.id === selectedRoleId) ?? null, [roles, selectedRoleId]);
+
+  const filteredPermissions = useMemo(() => {
+    const q = permQuery.trim().toLowerCase();
+    if (!q) return permissions;
+    return permissions.filter((p) => p.name.toLowerCase().includes(q));
+  }, [permissions, permQuery]);
 
   const load = async () => {
     setIsLoading(true);
@@ -142,11 +149,43 @@ export default function AdminRbacPage() {
           </div>
 
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <h4 style={{ margin: 0 }}>{selectedRole ? `Role: ${selectedRole.name}` : "Pilih role"}</h4>
-              <button className="primary-btn" onClick={handleSave} disabled={!selectedRole || isSaving}>
-                {isSaving ? "Saving..." : "Save"}
-              </button>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <input
+                  value={permQuery}
+                  onChange={(e) => setPermQuery(e.target.value)}
+                  placeholder="Search permission..."
+                  style={{ padding: 8, borderRadius: 10, border: "1px solid rgba(0,0,0,0.14)", minWidth: 200 }}
+                />
+                <button
+                  className="secondary-btn"
+                  onClick={() => {
+                    const next: Record<string, boolean> = { ...selected };
+                    for (const p of filteredPermissions) next[p.id] = true;
+                    setSelected(next);
+                  }}
+                  disabled={!selectedRole || isSaving}
+                  title="Enable all filtered permissions"
+                >
+                  Select all
+                </button>
+                <button
+                  className="secondary-btn"
+                  onClick={() => {
+                    const next: Record<string, boolean> = { ...selected };
+                    for (const p of filteredPermissions) next[p.id] = false;
+                    setSelected(next);
+                  }}
+                  disabled={!selectedRole || isSaving}
+                  title="Clear all filtered permissions"
+                >
+                  Clear all
+                </button>
+                <button className="primary-btn" onClick={handleSave} disabled={!selectedRole || isSaving}>
+                  {isSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
             </div>
 
             <div className="table-container" style={{ marginTop: 12 }}>
@@ -158,7 +197,7 @@ export default function AdminRbacPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {permissions.map((p) => (
+                  {filteredPermissions.map((p) => (
                     <tr key={p.id}>
                       <td>
                         <input

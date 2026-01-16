@@ -10,6 +10,7 @@ function isValidEmail(v: string) {
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; form?: string }>({});
   const { showAlert } = useAlert();
@@ -51,6 +52,7 @@ export default function ForgotPasswordPage() {
       }
 
       showAlert(data?.message ?? "Permintaan diproses.");
+      setStep(2);
 
       // Dev helper: tampilkan link reset kalau server mengembalikannya.
       if (data?.resetUrl) {
@@ -79,6 +81,22 @@ export default function ForgotPasswordPage() {
           <header className="auth-header">
             <h2>Lupa Password</h2>
             <p>Masukkan email kamu. Kami kirim instruksi reset.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }} aria-label="Progress">
+              {([1, 2, 3] as const).map((s) => (
+                <span
+                  key={s}
+                  style={{
+                    fontSize: 12,
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(0,0,0,0.12)",
+                    background: step === s ? "rgba(0,0,0,0.08)" : "transparent",
+                  }}
+                >
+                  {s === 1 ? "Request" : s === 2 ? "Check inbox" : "Reset"}
+                </span>
+              ))}
+            </div>
           </header>
 
           <form onSubmit={handleSubmit} className="auth-fields">

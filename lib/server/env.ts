@@ -1,9 +1,15 @@
 function required(name: string): string {
   const v = process.env[name];
-  if (!v || !v.trim()) {
-    throw new Error(`Missing required env: ${name}`);
+  if (v && v.trim()) return v.trim();
+
+  // During `next build`, Next may evaluate server modules to collect route data.
+  // We avoid throwing here so builds can succeed in environments where runtime
+  // secrets are injected later (e.g. deployment platform).
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return "";
   }
-  return v;
+
+  throw new Error(`Missing required env: ${name}`);
 }
 
 function optional(name: string, fallback = ""): string {

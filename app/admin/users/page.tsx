@@ -22,7 +22,7 @@ export default async function AdminUsersPage({
 }: {
   searchParams?: { q?: string; page?: string };
 }) {
-  const session = getSessionPayloadFromNextCookies();
+  const session = await getSessionPayloadFromNextCookies();
   if (!session) redirect("/login");
 
   const me = await findUserById(session.sub);

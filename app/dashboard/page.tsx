@@ -135,21 +135,54 @@ export default function Page() {
         </div>
 
         <div className="cards">
-          <div className="card">
-            <h3>Orders Today</h3>
-            <p>120</p>
-          </div>
-          <div className="card">
-            <h3>Revenue</h3>
-            <p>Rp 15.000.000</p>
-          </div>
-          <div className="card">
-            <h3>Top Dish</h3>
-            <p>Nasi Goreng</p>
-          </div>
+          {isLoadingUser ? (
+            <>
+              <div className="card" aria-hidden style={{ minHeight: 96, opacity: 0.6 }} />
+              <div className="card" aria-hidden style={{ minHeight: 96, opacity: 0.6 }} />
+              <div className="card" aria-hidden style={{ minHeight: 96, opacity: 0.6 }} />
+            </>
+          ) : (
+            <>
+              <div className="card">
+                <h3>Orders Today</h3>
+                <p>120</p>
+              </div>
+              <div className="card">
+                <h3>Revenue</h3>
+                <p>Rp 15.000.000</p>
+              </div>
+              <div className="card">
+                <h3>Top Dish</h3>
+                <p>Nasi Goreng</p>
+              </div>
+            </>
+          )}
         </div>
 
-        <canvas ref={canvasRef} style={{ maxWidth: "100%" }} />
+        {isLoadingUser ? (
+          <div aria-hidden style={{ height: 220, borderRadius: 12, background: "rgba(0,0,0,0.05)", marginTop: 12 }} />
+        ) : (
+          <canvas ref={canvasRef} style={{ maxWidth: "100%" }} />
+        )}
+
+        {!isLoadingUser && user ? (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", background: "rgba(0,0,0,0.03)" }}>
+            <p style={{ marginTop: 0 }}>
+              Quick actions untuk <b>{user.name}</b>
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Link className="secondary-btn" href="/settings">
+                Buka Settings
+              </Link>
+              <Link className="secondary-btn" href="/admin/users">
+                Admin Users
+              </Link>
+              <Link className="secondary-btn" href="/admin/audit-logs">
+                Audit Logs
+              </Link>
+            </div>
+          </div>
+        ) : null}
 
         <div className="table-container">
           <table>

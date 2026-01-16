@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/server/prisma";
+import { Prisma } from "@prisma/client";
 import { env } from "@/lib/server/env";
 import { ensureExportDir, resolveExportPath } from "@/lib/server/exportStorage";
 import fs from "node:fs";
@@ -83,6 +84,8 @@ async function processOne(jobId: string) {
 
   if (claimed.count !== 1) return;
 
+  let written = 0;
+
   try {
     const filters = JSON.parse(job.filters) as Filters;
     const where = buildWhere(filters);
@@ -139,7 +142,7 @@ async function processOne(jobId: string) {
 
     out.write(header + "\n");
 
-    let written = 0;
+    written = 0;
 
     // reset progress
     await prisma.auditLogExportJob.update({ where: { id: jobId }, data: { rowsWritten: 0 } });
@@ -149,7 +152,7 @@ async function processOne(jobId: string) {
     while (written < maxRows) {
       const take = Math.min(pageSize, maxRows - written);
 
-      const cursorWhere =
+      const cursorWhere: Prisma.AuditLogWhereInput | null =
         cursorCreatedAt && cursorId
           ? {
               OR: [
@@ -159,7 +162,7 @@ async function processOne(jobId: string) {
             }
           : null;
 
-      const finalWhere = cursorWhere ? { AND: [where, cursorWhere] } : where;
+      const finalWhere: Prisma.AuditLogWhereInput = cursorWhere ? { AND: [where, cursorWhere] } : where;
 
       const rows = await prisma.auditLog.findMany({
         where: finalWhere,

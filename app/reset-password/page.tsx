@@ -12,6 +12,7 @@ function ResetPasswordInner() {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ newPassword?: string; confirmPassword?: string; form?: string }>({});
 
@@ -93,29 +94,49 @@ function ResetPasswordInner() {
           <form onSubmit={handleSubmit} className="auth-fields">
             <div className="form-group">
               <label htmlFor="newPassword">Password Baru</label>
-              <input
-                id="newPassword"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Minimal 8 karakter"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                aria-invalid={Boolean(errors.newPassword)}
-              />
+              <div className="auth-input-row">
+                <input
+                  id="newPassword"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Minimal 8 karakter"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  aria-invalid={Boolean(errors.newPassword)}
+                />
+                <button
+                  type="button"
+                  className="auth-ghost-btn"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
               {errors.newPassword ? <p className="auth-error">{errors.newPassword}</p> : null}
             </div>
 
             <div className="form-group">
               <label htmlFor="confirmPassword">Konfirmasi Password</label>
-              <input
-                id="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Ulangi password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                aria-invalid={Boolean(errors.confirmPassword)}
-              />
+              <div className="auth-input-row">
+                <input
+                  id="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Ulangi password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  aria-invalid={Boolean(errors.confirmPassword)}
+                />
+                <button
+                  type="button"
+                  className="auth-ghost-btn"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
               {errors.confirmPassword ? <p className="auth-error">{errors.confirmPassword}</p> : null}
             </div>
 

@@ -49,8 +49,8 @@ export async function GET(req: Request) {
   if (action) where.action = { contains: action };
   if (userId) where.userId = userId;
   if (targetUserId) where.targetUserId = targetUserId;
-  if (targetEmail) where.targetEmail = { contains: targetEmail, mode: "insensitive" };
-  if (resource) where.resource = { contains: resource, mode: "insensitive" };
+  if (targetEmail) where.targetEmail = { contains: targetEmail };
+  if (resource) where.resource = { contains: resource };
   if (statusCodeRaw) {
     const n = Number(statusCodeRaw);
     if (Number.isFinite(n)) where.statusCode = Math.floor(n);

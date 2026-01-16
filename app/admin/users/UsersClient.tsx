@@ -92,6 +92,20 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
   const [roleSelection, setRoleSelection] = useState<Record<string, boolean>>({});
   const [isSavingUserRoles, setIsSavingUserRoles] = useState(false);
 
+  // Bulk role assignment state
+  const [bulkSelected, setBulkSelected] = useState<Record<string, boolean>>({});
+  const [bulkRoleSelection, setBulkRoleSelection] = useState<Record<string, boolean>>({});
+  const [isBulkApplying, setIsBulkApplying] = useState(false);
+
+  // Undo snackbar state (for bulk apply)
+  const [bulkUndo, setBulkUndo] = useState<null | {
+    message: string;
+    userIds: string[];
+    // previous roles by user id
+    prevRoleIdsByUser: Record<string, string[]>;
+  }>(null);
+  const [isBulkUndoing, setIsBulkUndoing] = useState(false);
+
   const pageSize = initial.pageSize ?? DEFAULT_PAGE_SIZE;
   const hasNext = useMemo(() => query.page * pageSize < total, [query.page, pageSize, total]);
 
@@ -194,6 +208,24 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
     setRoleSelection({});
   };
 
+  const applyRolesForUser = async (userId: string, roleIds: string[]) => {
+    const res = await fetch("/api/admin/rbac/user-roles", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, roleIds }),
+    });
+
+    if (res.status === 401) {
+      router.push("/login");
+      return false;
+    }
+    if (!res.ok) {
+      setError("Gagal menyimpan roles untuk user.");
+      return false;
+    }
+    return true;
+  };
+
   const saveRoles = async (userId: string) => {
     setIsSavingUserRoles(true);
     try {
@@ -201,20 +233,8 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
         .filter(([, v]) => v)
         .map(([id]) => id);
 
-      const res = await fetch("/api/admin/rbac/user-roles", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, roleIds }),
-      });
-
-      if (res.status === 401) {
-        router.push("/login");
-        return;
-      }
-      if (!res.ok) {
-        setError("Gagal menyimpan roles untuk user.");
-        return;
-      }
+      const ok = await applyRolesForUser(userId, roleIds);
+      if (!ok) return;
 
       cancelEdit();
       // Re-fetch current page
@@ -232,12 +252,74 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
     }
   };
 
-  return (
-    <div className="card">
-      <div className="card-header">
-        <h3>Daftar User</h3>
-        <p>Total: {total}</p>
-      </div>
+  const bulkApply = async () => {
+   const userIds = Object.entries(bulkSelected)
+     .filter(([, v]) => v)
+     .map(([id]) => id);
+   if (!userIds.length) return;
+
+   setIsBulkApplying(true);
+   try {
+     const roleIds = Object.entries(bulkRoleSelection)
+       .filter(([, v]) => v)
+       .map(([id]) => id);
+
+     for (const uid of userIds) {
+       // Apply the same roleIds to all selected users
+       // (bulk replace, consistent with single-user edit)
+       // eslint-disable-next-line no-await-in-loop
+       const ok = await applyRolesForUser(uid, roleIds);
+       if (!ok) break;
+     }
+
+     // Refresh current page
+     const usersUrl = new URL("/api/admin/users", window.location.origin);
+     if (query.q) usersUrl.searchParams.set("q", query.q);
+     usersUrl.searchParams.set("page", String(query.page));
+     usersUrl.searchParams.set("pageSize", String(pageSize));
+     const usersRes = await fetch(usersUrl.toString());
+     const usersData = (await usersRes.json().catch(() => null)) as ApiResponse | null;
+     setRows(Array.isArray(usersData?.users) ? usersData!.users : []);
+     setTotal(typeof usersData?.total === "number" ? usersData.total : 0);
+
+     setBulkSelected({});
+     setBulkRoleSelection({});
+   } finally {
+     setIsBulkApplying(false);
+   }
+ };
+
+ return (
+   <div className="card">
+     <div className="card-header">
+       <h3>Daftar User</h3>
+       <p>Total: {total}</p>
+     </div>
+
+     <div style={{ marginTop: 12, padding: 12, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", background: "rgba(0,0,0,0.03)" }}>
+       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+         <b>Bulk roles</b>
+         <button className="primary-btn" onClick={() => void bulkApply()} disabled={isBulkApplying}>
+           {isBulkApplying ? "Applying..." : "Apply to selected"}
+         </button>
+       </div>
+       <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+         {roles.map((r) => (
+           <label key={r.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+             <input
+               type="checkbox"
+               checked={Boolean(bulkRoleSelection[r.id])}
+               onChange={(e) => setBulkRoleSelection((prev) => ({ ...prev, [r.id]: e.target.checked }))}
+               disabled={isBulkApplying}
+             />
+             <span>{r.name}</span>
+           </label>
+         ))}
+       </div>
+       <p style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+         Pilih user via checkbox di tabel, lalu pilih roles di sini. Aksi ini akan <b>mengganti</b> roles user terpilih.
+       </p>
+     </div>
 
       <div className="action-bar" style={{ justifyContent: "space-between", marginTop: 12 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -270,7 +352,14 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
         </div>
       </div>
 
-      {error ? <div className="auth-form-error">{error}</div> : null}
+      {error ? (
+        <div className="auth-form-error" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span>{error}</span>
+          <button className="secondary-btn" onClick={() => setUrlQuery({ page: query.page })} disabled={isLoading}>
+            Retry
+          </button>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <p style={{ marginTop: 12 }}>Loading...</p>
@@ -281,6 +370,20 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
           <table>
             <thead>
               <tr>
+                <th style={{ width: 44 }}>
+                  <input
+                    type="checkbox"
+                    aria-label="Select all on page"
+                    checked={rows.length > 0 && rows.every((u) => bulkSelected[u.id])}
+                    onChange={(e) => {
+                      const v = e.target.checked;
+                      const next: Record<string, boolean> = { ...bulkSelected };
+                      for (const u of rows) next[u.id] = v;
+                      setBulkSelected(next);
+                    }}
+                    disabled={isBulkApplying}
+                  />
+                </th>
                 <th>Nama</th>
                 <th>Email</th>
                 <th>Roles</th>
@@ -291,6 +394,15 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
             <tbody>
               {rows.map((u) => (
                 <tr key={u.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      aria-label={`Select user ${u.email}`}
+                      checked={Boolean(bulkSelected[u.id])}
+                      onChange={(e) => setBulkSelected((prev) => ({ ...prev, [u.id]: e.target.checked }))}
+                      disabled={isBulkApplying}
+                    />
+                  </td>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
                   <td>

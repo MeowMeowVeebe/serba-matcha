@@ -3,6 +3,23 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+
+function passwordChecks(pw: string) {
+  const v = pw ?? "";
+  return {
+    length: v.length >= 8,
+    lower: /[a-z]/.test(v),
+    upper: /[A-Z]/.test(v),
+    number: /\d/.test(v),
+    symbol: /[^A-Za-z0-9]/.test(v),
+  };
+}
+
+function passwordScore(pw: string) {
+  const c = passwordChecks(pw);
+  const score = Object.values(c).filter(Boolean).length; // 0..5
+  return { score, checks: c };
+}
 import { register } from "@/lib/authClient";
 import { useAlert } from "../../context/AlertContext";
 
@@ -27,11 +44,15 @@ export default function RegisterPage() {
   }>({});
   const { showAlert } = useAlert();
 
+  const strength = useMemo(() => passwordScore(password), [password]);
+
   const canSubmit = useMemo(() => {
     if (isSubmitting) return false;
     if (!name || !email || !password || !confirmPassword) return false;
-    return password === confirmPassword;
-  }, [name, email, password, confirmPassword, isSubmitting]);
+    if (password !== confirmPassword) return false;
+    // Require at least 3 checks to reduce weak passwords
+    return strength.score >= 3;
+  }, [name, email, password, confirmPassword, isSubmitting, strength.score]);
 
   const validate = () => {
     const next: typeof errors = {};
@@ -44,6 +65,7 @@ export default function RegisterPage() {
 
     if (!password) next.password = "Password wajib diisi.";
     else if (password.length < 8) next.password = "Password minimal 8 karakter.";
+    else if (strength.score < 3) next.password = "Password terlalu lemah. Gunakan kombinasi huruf/angka/simbol.";
 
     if (!confirmPassword) next.confirmPassword = "Konfirmasi password wajib diisi.";
     else if (confirmPassword !== password) next.confirmPassword = "Konfirmasi password tidak sama.";
@@ -139,6 +161,40 @@ export default function RegisterPage() {
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
+
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <div style={{ flex: 1, height: 8, borderRadius: 999, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        width: `${(strength.score / 5) * 100}%`,
+                        height: "100%",
+                        background:
+                          strength.score <= 1
+                            ? "#b00020"
+                            : strength.score === 2
+                              ? "#f08c00"
+                              : strength.score === 3
+                                ? "#2f9e44"
+                                : "#1971c2",
+                        transition: "width 160ms ease",
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: 12, opacity: 0.8 }}>
+                    {strength.score <= 1 ? "Weak" : strength.score === 2 ? "Ok" : strength.score === 3 ? "Good" : "Strong"}
+                  </span>
+                </div>
+
+                <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12, opacity: 0.85 }}>
+                  <li style={{ color: strength.checks.length ? "#2f9e44" : "inherit" }}>Min 8 characters</li>
+                  <li style={{ color: strength.checks.lower ? "#2f9e44" : "inherit" }}>Contains lowercase</li>
+                  <li style={{ color: strength.checks.upper ? "#2f9e44" : "inherit" }}>Contains uppercase</li>
+                  <li style={{ color: strength.checks.number ? "#2f9e44" : "inherit" }}>Contains number</li>
+                  <li style={{ color: strength.checks.symbol ? "#2f9e44" : "inherit" }}>Contains symbol</li>
+                </ul>
+              </div>
+
               {errors.password ? <p className="auth-error">{errors.password}</p> : null}
             </div>
 
