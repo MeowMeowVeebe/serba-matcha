@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+
+import AuthShell from "@/components/AuthShell";
+import FormError from "@/components/form/FormError";
+import PasswordField from "@/components/form/PasswordField";
+import PrimaryButton from "@/components/form/PrimaryButton";
+import { TextField } from "@/components/form/TextField";
+import { useAlert } from "@/context/AlertContext";
+import { register } from "@/lib/authClient";
 
 function passwordChecks(pw: string) {
   const v = pw ?? "";
@@ -20,9 +28,6 @@ function passwordScore(pw: string) {
   const score = Object.values(c).filter(Boolean).length; // 0..5
   return { score, checks: c };
 }
-import { register } from "@/lib/authClient";
-import { useAlert } from "../../context/AlertContext";
-
 function isValidEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
@@ -33,8 +38,16 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement | null>(null);
+  const mismatch = useMemo(() => {
+    if (!password || !confirmPassword) return false;
+    return password !== confirmPassword;
+  }, [password, confirmPassword]);
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
@@ -71,6 +84,12 @@ export default function RegisterPage() {
     else if (confirmPassword !== password) next.confirmPassword = "Konfirmasi password tidak sama.";
 
     setErrors(next);
+
+    if (next.name) nameRef.current?.focus();
+    else if (next.email) emailRef.current?.focus();
+    else if (next.password) passwordRef.current?.focus();
+    else if (next.confirmPassword) confirmPasswordRef.current?.focus();
+
     return Object.keys(next).length === 0;
   };
 
@@ -84,11 +103,13 @@ export default function RegisterPage() {
     try {
       const res = await register({ name, email, password });
       if (!res.ok) {
-        setErrors({ form: res.message ?? "Registrasi gagal." });
+        const msg = res.message ?? "Registrasi gagal.";
+        setErrors({ form: msg });
+        showAlert(msg, { variant: "error" });
         return;
       }
 
-      showAlert(res.message ?? "Registrasi berhasil.");
+      showAlert(res.message ?? "Registrasi berhasil.", { variant: "success" });
       router.push("/login");
     } finally {
       setIsSubmitting(false);
@@ -96,149 +117,117 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="auth-container">
-      <section className="auth-card" aria-label="Register">
-        <aside className="auth-aside" aria-hidden>
-          <div className="auth-brand">
-            <div className="auth-logo">M</div>
-          </div>
-        </aside>
+    <AuthShell
+      ariaLabel="Register"
+      headerTitle="Buat Akun"
+      headerDescription="Lengkapi data untuk mulai mengelola dashboard."
+      asideTitle="Serba Matcha"
+      asideDescription="Mulai dari insight ke aksi hanya dalam hitungan menit."
+      asideBenefits={["Onboarding cepat", "Template playbook siap pakai", "Kontrol penuh akses tim"]}
+    >
+      <form onSubmit={handleRegister} className="auth-fields">
+        <TextField
+          ref={nameRef}
+          id="name"
+          label="Nama"
+          type="text"
+          autoComplete="name"
+          placeholder="Nama lengkap"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          error={errors.name}
+        />
 
-        <div className="auth-form">
-          <header className="auth-header">
-            <h2>Register</h2>
-            <p>Isi data berikut untuk membuat akun.</p>
-          </header>
+        <TextField
+          ref={emailRef}
+          id="email"
+          label="Email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="nama@domain.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
+        />
 
-          <form onSubmit={handleRegister} className="auth-fields">
-            <div className="form-group">
-              <label htmlFor="name">Nama</label>
-              <input
-                id="name"
-                type="text"
-                autoComplete="name"
-                placeholder="Nama lengkap"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                aria-invalid={Boolean(errors.name)}
-              />
-              {errors.name ? <p className="auth-error">{errors.name}</p> : null}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="nama@domain.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                aria-invalid={Boolean(errors.email)}
-              />
-              {errors.email ? <p className="auth-error">{errors.email}</p> : null}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="auth-input-row">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="Minimal 8 karakter"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  aria-invalid={Boolean(errors.password)}
-                />
-                <button
-                  type="button"
-                  className="auth-ghost-btn"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-
-              <div style={{ marginTop: 8 }}>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <div style={{ flex: 1, height: 8, borderRadius: 999, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
-                    <div
-                      style={{
-                        width: `${(strength.score / 5) * 100}%`,
-                        height: "100%",
-                        background:
-                          strength.score <= 1
-                            ? "#b00020"
-                            : strength.score === 2
-                              ? "#f08c00"
-                              : strength.score === 3
-                                ? "#2f9e44"
-                                : "#1971c2",
-                        transition: "width 160ms ease",
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: 12, opacity: 0.8 }}>
-                    {strength.score <= 1 ? "Weak" : strength.score === 2 ? "Ok" : strength.score === 3 ? "Good" : "Strong"}
-                  </span>
+        <PasswordField
+          ref={passwordRef}
+          id="password"
+          label="Password"
+          autoComplete="new-password"
+          placeholder="Minimal 8 karakter"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          // keep aria-invalid driven by validate() for now
+          error={errors.password}
+          showCapsLockHint
+          hint={
+            <div style={{ marginTop: 2 }}>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <div style={{ flex: 1, height: 8, borderRadius: 999, background: "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      width: `${(strength.score / 5) * 100}%`,
+                      height: "100%",
+                      background:
+                        strength.score <= 1
+                          ? "#b00020"
+                          : strength.score === 2
+                            ? "#f08c00"
+                            : strength.score === 3
+                              ? "#2f9e44"
+                              : "#1971c2",
+                      transition: "width 160ms ease",
+                    }}
+                  />
                 </div>
-
-                <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12, opacity: 0.85 }}>
-                  <li style={{ color: strength.checks.length ? "#2f9e44" : "inherit" }}>Min 8 characters</li>
-                  <li style={{ color: strength.checks.lower ? "#2f9e44" : "inherit" }}>Contains lowercase</li>
-                  <li style={{ color: strength.checks.upper ? "#2f9e44" : "inherit" }}>Contains uppercase</li>
-                  <li style={{ color: strength.checks.number ? "#2f9e44" : "inherit" }}>Contains number</li>
-                  <li style={{ color: strength.checks.symbol ? "#2f9e44" : "inherit" }}>Contains symbol</li>
-                </ul>
+                <span style={{ fontSize: 12, opacity: 0.8 }}>
+                  {strength.score <= 1 ? "Weak" : strength.score === 2 ? "Ok" : strength.score === 3 ? "Good" : "Strong"}
+                </span>
               </div>
 
-              {errors.password ? <p className="auth-error">{errors.password}</p> : null}
+              <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12, opacity: 0.85 }}>
+                <li style={{ color: strength.checks.length ? "#2f9e44" : "inherit" }}>Min 8 characters</li>
+                <li style={{ color: strength.checks.lower ? "#2f9e44" : "inherit" }}>Contains lowercase</li>
+                <li style={{ color: strength.checks.upper ? "#2f9e44" : "inherit" }}>Contains uppercase</li>
+                <li style={{ color: strength.checks.number ? "#2f9e44" : "inherit" }}>Contains number</li>
+                <li style={{ color: strength.checks.symbol ? "#2f9e44" : "inherit" }}>Contains symbol</li>
+              </ul>
             </div>
+          }
+        />
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Konfirmasi Password</label>
-              <input
-                id="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                placeholder="Ulangi password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                aria-invalid={Boolean(errors.confirmPassword)}
-              />
-              {errors.confirmPassword ? (
-                <p className="auth-error">{errors.confirmPassword}</p>
-              ) : null}
-            </div>
+        <PasswordField
+          ref={confirmPasswordRef}
+          id="confirmPassword"
+          label="Konfirmasi Password"
+          autoComplete="new-password"
+          placeholder="Ulangi password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          showCapsLockHint
+          aria-invalid={Boolean(errors.confirmPassword) || mismatch}
+          error={errors.confirmPassword}
+          hint={!errors.confirmPassword && mismatch ? "Konfirmasi password tidak sama." : undefined}
+        />
 
-            {errors.form ? <div className="auth-form-error">{errors.form}</div> : null}
+        <FormError message={errors.form} />
 
-            <button type="submit" className="auth-primary-btn" disabled={!canSubmit}>
-              {isSubmitting ? (
-                <span className="auth-btn-row">
-                  <span className="auth-spinner" aria-hidden />
-                  Memproses...
-                </span>
-              ) : (
-                "Daftar"
-              )}
-            </button>
+        <PrimaryButton type="submit" disabled={!canSubmit} isLoading={isSubmitting}>
+          Daftar
+        </PrimaryButton>
 
-            <div className="auth-divider">
-              <span />
-              <p>Sudah punya akun?</p>
-              <span />
-            </div>
-
-            <Link href="/login" className="auth-secondary-link">
-              Masuk ke akun
-            </Link>
-          </form>
+        <div className="auth-divider">
+          <span />
+          <p>Sudah punya akun?</p>
+          <span />
         </div>
-      </section>
-    </main>
+
+        <Link href="/login" className="auth-secondary-link">
+          Masuk ke akun
+        </Link>
+      </form>
+    </AuthShell>
   );
 }

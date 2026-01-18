@@ -1,28 +1,28 @@
 :root {
-  --light-bg: #F5F5F5;
+  --light-bg: #F7F9F7;
   --light-card: #FFFFFF;
   --light-sidebar: #FFFFFF;
-  --light-sidebar-border: #E0E0E0;
+  --light-sidebar-border: #E8F5E9;
   --light-header: #FFFFFF;
   --light-text-primary: #222222;
   --light-text-secondary: #555555;
-  --light-primary-btn: #FF4B3E;
-  --light-hover-btn: #FFA63D;
-  --light-table-header: #FF6B5E;
-  --light-table-row-hover: #ECECEC;
+  --light-primary-btn: #6B9C6F;
+  --light-hover-btn: #7FB783;
+  --light-table-header: #A8D5A3;
+  --light-table-row-hover: #F1F8F1;
 
-  --dark-bg: #121926;
-  --dark-card: #1C2433;
-  --dark-sidebar: #1A2030;
-  --dark-header: #1C2433;
+  --dark-bg: #1A1F1A;
+  --dark-card: #2D3A2D;
+  --dark-sidebar: #232B23;
+  --dark-header: #2D3A2D;
   --dark-text-primary: #FFFFFF;
   --dark-text-secondary: #E5E5E5;
-  --dark-primary-btn: #FFA63D;
-  --dark-hover-btn: #FFD93D;
-  --dark-table-header: #3B82F6;
-  --dark-table-row-hover: #2A3346;
+  --dark-primary-btn: #7FB783;
+  --dark-hover-btn: #A8D5A3;
+  --dark-table-header: #6B9C6F;
+  --dark-table-row-hover: #3A4A3A;
   --dark-sidebar-link: #FFFFFF;
-  --dark-chart-line: #FFD93D;
+  --dark-chart-line: #A8D5A3;
 
   --card-radius: 12px;
   --shadow: 0 4px 12px rgba(0,0,0,0.1);

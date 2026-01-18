@@ -16,6 +16,16 @@ const eslintConfig = defineConfig([
     // Project ignores:
     "coverage/**",
     "node_modules/**",
+
+    // Ignore admin/demo + scripts to keep CI/dev focused on core app pages.
+    "app/admin/**",
+    "app/api/admin/**",
+    "app/components-demo/**",
+    "app/feature-spotlight/**",
+    "app/features-demo/**",
+    "scripts/**",
+    "public/sw.js",
+    "types/**",
   ]),
 ]);
 

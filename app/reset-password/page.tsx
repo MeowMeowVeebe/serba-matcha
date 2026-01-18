@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { useAlert } from "@/context/AlertContext";
+import PasswordField from "@/components/form/PasswordField";
+import FormError from "@/components/form/FormError";
+import PrimaryButton from "@/components/form/PrimaryButton";
+import AuthShell from "@/components/AuthShell";
 
 function ResetPasswordInner() {
   const router = useRouter();
@@ -12,7 +16,6 @@ function ResetPasswordInner() {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ newPassword?: string; confirmPassword?: string; form?: string }>({});
 
@@ -25,6 +28,9 @@ function ResetPasswordInner() {
     return newPassword === confirmPassword;
   }, [isSubmitting, token, newPassword, confirmPassword]);
 
+  const newPasswordRef = useRef<HTMLInputElement | null>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement | null>(null);
+
   const validate = () => {
     const next: typeof errors = {};
     if (!token) next.form = "Token tidak ditemukan.";
@@ -36,6 +42,10 @@ function ResetPasswordInner() {
     else if (confirmPassword !== newPassword) next.confirmPassword = "Konfirmasi password tidak sama.";
 
     setErrors(next);
+
+    if (next.newPassword) newPasswordRef.current?.focus();
+    else if (next.confirmPassword) confirmPasswordRef.current?.focus();
+
     return Object.keys(next).length === 0;
   };
 
@@ -56,11 +66,13 @@ function ResetPasswordInner() {
       const data = (await res.json().catch(() => null)) as { message?: string } | null;
 
       if (!res.ok) {
-        setErrors({ form: data?.message ?? "Gagal reset password." });
+        const msg = data?.message ?? "Gagal reset password.";
+        setErrors({ form: msg });
+        showAlert(msg, { variant: "error" });
         return;
       }
 
-      showAlert(data?.message ?? "Password berhasil direset.");
+      showAlert(data?.message ?? "Password berhasil direset.", { variant: "success" });
       router.push("/reset-password/success");
     } finally {
       setIsSubmitting(false);
@@ -68,104 +80,56 @@ function ResetPasswordInner() {
   };
 
   return (
-    <main className="auth-container">
-      <section className="auth-card" aria-label="Reset Password">
-        <aside className="auth-aside" aria-hidden>
-          <div className="auth-brand">
-            <div className="auth-logo">M</div>
-            <div>
-              <h1>Matchia</h1>
-              <p>Set password baru untuk akun kamu.</p>
-            </div>
-          </div>
-          <ul className="auth-benefits">
-            <li>Token sekali pakai</li>
-            <li>Otomatis kedaluwarsa</li>
-            <li>Siap integrasi email</li>
-          </ul>
-        </aside>
+    <AuthShell
+      ariaLabel="Reset Password"
+      headerTitle="Reset Password"
+      headerDescription="Buat password baru agar akun tetap aman."
+      asideTitle="Serba Matcha"
+      asideDescription="Selesaikan reset agar bisa login kembali."
+      asideBenefits={["Token sekali pakai", "Otomatis kedaluwarsa", "Proteksi akun aktif"]}
+    >
+      <form onSubmit={handleSubmit} className="auth-fields">
+        <PasswordField
+          ref={newPasswordRef}
+          id="newPassword"
+          label="Password Baru"
+          autoComplete="new-password"
+          placeholder="Minimal 8 karakter"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          error={errors.newPassword}
+          showCapsLockHint
+        />
 
-        <div className="auth-form">
-          <header className="auth-header">
-            <h2>Reset Password</h2>
-            <p>Masukkan password baru untuk akun kamu.</p>
-          </header>
+        <PasswordField
+          ref={confirmPasswordRef}
+          id="confirmPassword"
+          label="Konfirmasi Password"
+          autoComplete="new-password"
+          placeholder="Ulangi password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          error={errors.confirmPassword}
+          showCapsLockHint
+        />
 
-          <form onSubmit={handleSubmit} className="auth-fields">
-            <div className="form-group">
-              <label htmlFor="newPassword">Password Baru</label>
-              <div className="auth-input-row">
-                <input
-                  id="newPassword"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="Minimal 8 karakter"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  aria-invalid={Boolean(errors.newPassword)}
-                />
-                <button
-                  type="button"
-                  className="auth-ghost-btn"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-              {errors.newPassword ? <p className="auth-error">{errors.newPassword}</p> : null}
-            </div>
+        <FormError message={errors.form} />
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Konfirmasi Password</label>
-              <div className="auth-input-row">
-                <input
-                  id="confirmPassword"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  placeholder="Ulangi password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  aria-invalid={Boolean(errors.confirmPassword)}
-                />
-                <button
-                  type="button"
-                  className="auth-ghost-btn"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-              {errors.confirmPassword ? <p className="auth-error">{errors.confirmPassword}</p> : null}
-            </div>
+        <PrimaryButton type="submit" disabled={!canSubmit} isLoading={isSubmitting}>
+          Simpan Password
+        </PrimaryButton>
 
-            {errors.form ? <div className="auth-form-error">{errors.form}</div> : null}
-
-            <button type="submit" className="auth-primary-btn" disabled={!canSubmit}>
-              {isSubmitting ? (
-                <span className="auth-btn-row">
-                  <span className="auth-spinner" aria-hidden />
-                  Memproses...
-                </span>
-              ) : (
-                "Simpan Password"
-              )}
-            </button>
-
-            <div className="auth-divider">
-              <span />
-              <p>Kembali</p>
-              <span />
-            </div>
-
-            <Link href="/login" className="auth-secondary-link">
-              Ke halaman Login
-            </Link>
-          </form>
+        <div className="auth-divider">
+          <span />
+          <p>Kembali</p>
+          <span />
         </div>
-      </section>
-    </main>
+
+        <Link href="/login" className="auth-secondary-link">
+          Ke halaman Login
+        </Link>
+      </form>
+    </AuthShell>
   );
 }
 

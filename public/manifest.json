@@ -1,0 +1,39 @@
+{
+  "name": "Serba Matcha - Admin Dashboard",
+  "short_name": "Matcha",
+  "description": "Secure admin dashboard with RBAC and audit logging",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F7F9F7",
+  "theme_color": "#6B9C6F",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/vercel.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/file.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}

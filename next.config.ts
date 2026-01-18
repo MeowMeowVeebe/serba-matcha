@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://10.236.231.218",
+    "http://10.236.231.218:3000",
+    "http://10.236.231.218:3001",
+  ],
   async headers() {
     // Keep CSP minimal to avoid breaking Next assets. Tighten further when ready.
     const csp = [
@@ -34,7 +43,40 @@ const nextConfig: NextConfig = {
             ].join(", "),
           },
           // Start with enforced CSP; if this causes issues, switch to Content-Security-Policy-Report-Only.
-          { key: "Content-Security-Policy", value: csp },
+          {
+            key: "Content-Security-Policy",
+            value: csp
+              .replace(
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com"
+              )
+              .replace(
+                "connect-src 'self'",
+                "connect-src 'self' https://assets6.lottiefiles.com"
+              )
+              .replace(
+                "img-src 'self' data: blob:",
+                "img-src 'self' data: blob: https://assets6.lottiefiles.com"
+              ),
+          },
+        ],
+      },
+      {
+        source: "/(.*)",
+        has: [{ type: "host", value: "localhost(:\\d+)?" }],
+        headers: [
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate" },
+          { key: "Pragma", value: "no-cache" },
+          { key: "Expires", value: "0" },
+        ],
+      },
+      {
+        source: "/(.*)",
+        has: [{ type: "host", value: "127.0.0.1(:\\d+)?" }],
+        headers: [
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate" },
+          { key: "Pragma", value: "no-cache" },
+          { key: "Expires", value: "0" },
         ],
       },
     ];

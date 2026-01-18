@@ -11,6 +11,10 @@ import {
   removeOverlay,
   subscribeOverlayStack,
 } from "@/lib/client/overlayStack";
+import FormError from "@/components/form/FormError";
+import EmptyState from "@/components/ui/EmptyState";
+import SkeletonBlock from "@/components/ui/SkeletonBlock";
+import { useAlert } from "@/context/AlertContext";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -541,31 +545,17 @@ function renderPadRow(heightPx: number, colSpan: number) {
 }
 
 function StatusBadge({ status }: { status: ExportJob["status"] }) {
-  const cfg: Record<ExportJob["status"], { bg: string; fg: string }> = {
-    pending: { bg: "#fff7e6", fg: "#8a5a00" },
-    running: { bg: "#e8f0ff", fg: "#003a8c" },
-    completed: { bg: "#edf7ed", fg: "#1b5e20" },
-    failed: { bg: "#fdecea", fg: "#b00020" },
-    cancelled: { bg: "#f2f2f2", fg: "#444" },
-  };
-  const c = cfg[status];
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "2px 8px",
-        borderRadius: 999,
-        fontSize: 12,
-        background: c.bg,
-        color: c.fg,
-        border: "1px solid rgba(0,0,0,0.08)",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {status}
-    </span>
-  );
+  const variant =
+    status === "completed"
+      ? "success"
+      : status === "running"
+        ? "info"
+        : status === "failed"
+          ? "danger"
+          : status === "pending"
+            ? "warning"
+            : "info";
+  return <span className={`badge badge--${variant}`}>{status.toUpperCase()}</span>;
 }
 type QueryState = {
   action: string;
@@ -650,6 +640,7 @@ function buildSearch(params: QueryState) {
 
 export default function AuditLogsClient({ initial }: { initial: AdminAuditInitialData }) {
   const router = useRouter();
+  const { showAlert } = useAlert();
 
   // Applied query state (source of truth for list fetch + exports)
   const [query, setQuery] = useState<QueryState>(initial.query);
@@ -722,14 +713,9 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
   const [showAuditErrorPreview, setShowAuditErrorPreview] = useState(false);
   const [auditErrorPreviewMode, setAuditErrorPreviewMode] = useState<"pretty" | "raw">("pretty");
 
-  type Toast = { id: string; message: string; type: "success" | "error" | "info" };
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const pushToast = (message: string, type: Toast["type"] = "info") => {
-    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    window.setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
+  const pushToast = (message: string, type: "success" | "error" | "info" = "info") => {
+    const variant = type === "success" ? "success" : type === "error" ? "error" : "info";
+    showAlert(message, { variant });
   };
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -2334,9 +2320,9 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
       </Dialog>
 
      <Dialog open={manageViewsOpen} title="Manage saved views" onClose={() => setManageViewsOpen(false)}>
-       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+       <div className="btn-row btn-row--between" style={{ marginBottom: 10 }}>
          <h4 style={{ margin: 0 }}>Manage saved views</h4>
-         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+         <div className="btn-row">
            <button className="secondary-btn" onClick={() => saveAllDirtyViewNames()} title="Save all dirty name edits">
              Save all dirty
            </button>
@@ -2394,26 +2380,19 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                e.currentTarget.value = "";
              }}
            />
-           <div
-             role="group"
-             aria-label="Import mode"
-             style={{ display: "inline-flex", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 999, overflow: "hidden" }}
-             title="Choose import strategy"
-           >
+           <div className="segmented" role="group" aria-label="Import mode" title="Choose import strategy">
              <button
                type="button"
-               className="secondary-btn"
+               className={`segmented__btn ${manageViewsImportMode === "merge" ? "active" : ""}`}
                onClick={() => setManageViewsImportMode("merge")}
-               style={{ border: 0, borderRadius: 0, padding: "6px 10px", background: manageViewsImportMode === "merge" ? "rgba(0,0,0,0.08)" : "transparent" }}
                aria-pressed={manageViewsImportMode === "merge"}
              >
                Merge
              </button>
              <button
                type="button"
-               className="secondary-btn"
+               className={`segmented__btn ${manageViewsImportMode === "replace" ? "active" : ""}`}
                onClick={() => setManageViewsImportMode("replace")}
-               style={{ border: 0, borderRadius: 0, padding: "6px 10px", background: manageViewsImportMode === "replace" ? "rgba(0,0,0,0.08)" : "transparent" }}
                aria-pressed={manageViewsImportMode === "replace"}
              >
                Replace
@@ -2434,10 +2413,10 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
          </div>
        </div>
 
-       <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
+       <div className="stack" style={{ marginTop: 10 }}>
          {savedViews.length ? (
            savedViews.map((v, idx) => (
-             <div key={v.id} style={{ display: "flex", gap: 8, alignItems: "center", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 10 }}>
+             <div key={v.id} className="btn-row" style={{ border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 10 }}>
                <input
                  type="checkbox"
                  checked={Boolean(manageViewsSelected[v.id])}
@@ -2448,17 +2427,16 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                <input
                  value={manageViewsNameDrafts[v.id] ?? v.name}
                  onChange={(e) => setManageViewsNameDrafts((prev) => ({ ...prev, [v.id]: e.target.value }))}
-                 style={{ flex: 1, padding: 8, borderRadius: 10, border: "1px solid rgba(0,0,0,0.14)" }}
+                 className="ghost-btn"
+                 style={{ flex: 1, padding: 8 }}
                />
 
                {(manageViewsNameDrafts[v.id] ?? v.name).trim() !== v.name.trim() ? (
-                 <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 999, background: "rgba(255, 193, 7, 0.18)", border: "1px solid rgba(0,0,0,0.12)" }}>
-                   dirty
-                 </span>
+                 <span className="badge badge--warning">dirty</span>
                ) : null}
 
                <button
-                 className="secondary-btn"
+                 className="secondary-btn secondary-btn--sm"
                  onClick={() => renameSavedView(v.id, manageViewsNameDrafts[v.id] ?? v.name)}
                  disabled={(manageViewsNameDrafts[v.id] ?? v.name).trim() === v.name.trim()}
                  title="Save name"
@@ -2466,19 +2444,19 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                  Save
                </button>
 
-               <button className="secondary-btn" onClick={() => moveSavedView(v.id, -1)} disabled={idx === 0} title="Move up">
-                 ↑
+               <button className="secondary-btn secondary-btn--sm" onClick={() => moveSavedView(v.id, -1)} disabled={idx === 0} title="Move up">
+                 â†‘
                </button>
                <button
-                 className="secondary-btn"
+                 className="secondary-btn secondary-btn--sm"
                  onClick={() => moveSavedView(v.id, 1)}
                  disabled={idx === savedViews.length - 1}
                  title="Move down"
                >
-                 ↓
+                 â†“
                </button>
 
-               <button className="secondary-btn" onClick={() => requestDeleteSavedView(v.id)} title="Delete">
+               <button className="secondary-btn secondary-btn--sm" onClick={() => requestDeleteSavedView(v.id)} title="Delete">
                  Delete
                </button>
              </div>
@@ -2575,7 +2553,7 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
      <div className="card-header">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <h3>Audit Logs</h3>
+            <h3 style={{ margin: 0 }}>Daftar</h3>
             <p style={{ marginBottom: 6 }}>Total: {total ?? "(cursor)"}</p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
               <span style={{ fontSize: 12, opacity: 0.75 }}>
@@ -2628,6 +2606,46 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                   Raw
                 </button>
               </div>
+            </div>
+
+            <div className="audit-alerts">
+              {[
+                {
+                  title: "Suspicious pattern",
+                  detail: "Login gagal berturut-turut dari IP baru.",
+                  badge: "High",
+                },
+                {
+                  title: "Elevated access",
+                  detail: "Perubahan role admin di luar jam kerja.",
+                  badge: "Medium",
+                },
+                {
+                  title: "API spike",
+                  detail: "Lonjakan request auth/reset-password.",
+                  badge: "Watch",
+                },
+              ].map((alert) => (
+                <div key={alert.title} className="audit-alerts__card">
+                  <div>
+                    <p className="audit-alerts__title">{alert.title}</p>
+                    <p className="audit-alerts__detail">{alert.detail}</p>
+                  </div>
+                  <span className="audit-alerts__badge">{alert.badge}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="export-health">
+              <div>
+                <p className="export-health__title">Export health monitor</p>
+                <p className="export-health__note">Last export: CSV 2m ago Â· Success</p>
+              </div>
+              <div className="export-health__status">
+                <span>Queue: 3</span>
+                <span>Failed: 0</span>
+              </div>
+            </div>
 
               <button
                 className="secondary-btn"
@@ -2812,835 +2830,34 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
         </div>
       </div>
 
-      {showShortcutsHelp ? (
+      {showShortcutsHelp && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Keyboard shortcuts"
+          className="modal-overlay"
           onClick={() => setShowShortcutsHelp(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.35)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-            zIndex: 60,
-          }}
         >
-          <div
-            className="card"
-            onClick={(e) => e.stopPropagation()}
-            style={{ width: "min(520px, 100vw)", border: "1px solid rgba(0,0,0,0.12)" }}
-          >
-            <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="card-header modal-header">
               <h4 style={{ margin: 0 }}>Keyboard shortcuts</h4>
-              <button className="secondary-btn" onClick={() => setShowShortcutsHelp(false)} title="Close (Esc)">
+              <button
+                className="secondary-btn secondary-btn--sm"
+                onClick={() => setShowShortcutsHelp(false)}
+                title="Close"
+              >
                 Close
               </button>
             </div>
             <div style={{ padding: 12, fontSize: 13 }}>
-              <Dialog open={reportPreviewOpen} title="Report preview" onClose={() => setReportPreviewOpen(false)}>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
-                  <label style={{ fontSize: 12, opacity: 0.8 }}>Mode</label>
-                  <select
-                    value={reportPreviewMode}
-                    onChange={(e) => setReportPreviewMode(e.target.value as any)}
-                    style={{ padding: 6, borderRadius: 10, border: "1px solid rgba(0,0,0,0.14)", background: "white" }}
-                  >
-                    <option value="text">Text</option>
-                    <option value="json">JSON</option>
-                    <option value="issue">Issue template</option>
-                    <option value="markdown">Markdown</option>
-                  </select>
-
-                  <button
-                    className="secondary-btn"
-                    onClick={async () => {
-                      const reportText = buildBugReportText();
-                      const title = "[Audit Logs] Shortcuts conflict / suggestion";
-                      const body = [
-                        "## Summary",
-                        "Describe what you expected vs what happened.",
-                        "",
-                        "## Context",
-                        `Time: ${new Date().toISOString()}`,
-                        "",
-                        "## Details",
-                        "```",
-                        reportText,
-                        "```",
-                      ].join("\n");
-                      const issueTemplate = [`Title: ${title}`, "", body].join("\n");
-                      const markdown = [
-                        "## Audit Logs Shortcuts Report",
-                        `Time: ${new Date().toISOString()}`,
-                        "",
-                        "```",
-                        reportText,
-                        "```",
-                      ].join("\n");
-
-                      const payload =
-                        reportPreviewMode === "json"
-                          ? JSON.stringify(buildBugReportData(), null, 2)
-                          : reportPreviewMode === "issue"
-                            ? issueTemplate
-                            : reportPreviewMode === "markdown"
-                              ? markdown
-                              : reportText;
-
-                      try {
-                        await navigator.clipboard.writeText(payload);
-                        pushToast("Preview copied", "success");
-                      } catch {
-                        window.prompt("Copy preview:", payload);
-                      }
-                    }}
-                    title="Copy current preview"
-                  >
-                    Copy from preview
-                  </button>
-                </div>
-
-                <pre
-                  style={{
-                    margin: 0,
-                    whiteSpace: "pre-wrap",
-                    fontSize: 12,
-                    lineHeight: 1.4,
-                    background: "rgba(0,0,0,0.03)",
-                    padding: 12,
-                    borderRadius: 12,
-                    border: "1px solid rgba(0,0,0,0.10)",
-                    maxHeight: "55vh",
-                    overflow: "auto",
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-                  }}
-                >
-                  {(() => {
-                    const reportText = buildBugReportText();
-                    const title = "[Audit Logs] Shortcuts conflict / suggestion";
-                    const body = [
-                      "## Summary",
-                      "Describe what you expected vs what happened.",
-                      "",
-                      "## Context",
-                      `Time: ${new Date().toISOString()}`,
-                      "",
-                      "## Details",
-                      "```",
-                      reportText,
-                      "```",
-                    ].join("\n");
-                    const issueTemplate = [`Title: ${title}`, "", body].join("\n");
-                    const markdown = [
-                      "## Audit Logs Shortcuts Report",
-                      `Time: ${new Date().toISOString()}`,
-                      "",
-                      "```",
-                      reportText,
-                      "```",
-                    ].join("\n");
-
-                    if (reportPreviewMode === "json") return JSON.stringify(buildBugReportData(), null, 2);
-                    if (reportPreviewMode === "issue") return issueTemplate;
-                    if (reportPreviewMode === "markdown") return markdown;
-                    return reportText;
-                  })()}
-                </pre>
-              </Dialog>
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-                <select
-                  value={shortcutsCategory}
-                  onChange={(e) => setShortcutsCategory(e.target.value as any)}
-                  style={{
-                    padding: 8,
-                    borderRadius: 10,
-                    border: "1px solid rgba(0,0,0,0.14)",
-                    background: "white",
-                  }}
-                  aria-label="Shortcut category"
-                >
-                  <option>All</option>
-                  <option>Search</option>
-                  <option>Navigation</option>
-                  <option>Export</option>
-                  <option>UI</option>
-                </select>
-
-                <input
-                  value={shortcutsSearch}
-                  onChange={(e) => setShortcutsSearch(e.target.value)}
-                  placeholder="Search shortcuts..."
-                  style={{
-                    flex: 1,
-                    minWidth: 180,
-                    padding: 8,
-                    borderRadius: 10,
-                    border: "1px solid rgba(0,0,0,0.14)",
-                  }}
-                />
-                <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, opacity: 0.9 }}>
-                  <input type="checkbox" checked={showOnlyConflicts} onChange={(e) => setShowOnlyConflicts(e.target.checked)} />
-                  Show only conflicts
-                </label>
-
-                <button
-                  className="secondary-btn"
-                  onClick={() => {
-                    setShortcutsCategory("All");
-                    setShortcutsSearch("");
-                    setShowOnlyConflicts(false);
-                    setShowConflictsPanel(false);
-                    setPressedKeys(new Set());
-                  }}
-                  title="Reset filters"
-                >
-                  Reset
-                </button>
-
-                <button
-                  className="secondary-btn"
-                  onClick={async () => {
-                    const text = shortcuts.map((s) => `${s.action}: ${s.key}`).join("\n");
-                    try {
-                      await navigator.clipboard.writeText(text);
-                      pushToast("Shortcuts copied", "success");
-                    } catch {
-                      window.prompt("Copy shortcuts:", text);
-                    }
-                  }}
-                  title="Copy all shortcuts"
-                >
-                  Copy all
-                </button>
-
-                <button
-                  className="secondary-btn"
-                  onClick={async () => {
-                    const text = shortcutConflicts
-                      .map((c) => `${c.key}: ${c.actions.join(", ")}`)
-                      .join("\n");
-                    try {
-                      await navigator.clipboard.writeText(text || "(no conflicts)");
-                      pushToast("Conflict report copied", "success");
-                    } catch {
-                      window.prompt("Copy conflict report:", text || "(no conflicts)");
-                    }
-                  }}
-                  disabled={!shortcutConflicts.length}
-                  title="Copy full conflict report"
-                >
-                  Copy conflicts
-                </button>
-
-                <button
-                  className="secondary-btn"
-                  onClick={() => {
-                    const text = shortcutConflicts
-                      .map((c) => `${c.key}: ${c.actions.join(", ")}`)
-                      .join("\n");
-                    const blob = new Blob([text || "(no conflicts)"], { type: "text/plain;charset=utf-8" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `shortcut-conflicts-${new Date().toISOString().slice(0, 10)}.txt`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    URL.revokeObjectURL(url);
-                  }}
-                  disabled={!shortcutConflicts.length}
-                  title="Download conflict report (.txt)"
-                >
-                  Download conflicts
-                </button>
-
-                {shortcutConflicts.length ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowConflictsPanel((v) => !v)}
-                    style={{
-                      fontSize: 12,
-                      padding: "4px 8px",
-                      borderRadius: 999,
-                      border: "1px solid rgba(176,0,32,0.25)",
-                      background: "rgba(176,0,32,0.08)",
-                      color: "#b00020",
-                      whiteSpace: "nowrap",
-                      cursor: "pointer",
-                    }}
-                    title="Toggle conflict details"
-                  >
-                    Conflicts: {shortcutConflicts.length}
-                  </button>
-                ) : null}
-              </div>
-
-              {showConflictsPanel && shortcutConflicts.length ? (
-                <div style={{ marginBottom: 10, padding: 10, borderRadius: 12, border: "1px solid rgba(176,0,32,0.20)", background: "rgba(176,0,32,0.06)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#b00020" }}>Conflict details</div>
-                    <input
-                      value={conflictsSearch}
-                      onChange={(e) => setConflictsSearch(e.target.value)}
-                      placeholder="Search conflicts..."
-                      style={{ padding: 6, borderRadius: 10, border: "1px solid rgba(176,0,32,0.25)", minWidth: 180 }}
-                    />
-                  </div>
-
-                  <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-                    {suggestedUnusedKeys.length ? (
-                      <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 6 }}>
-                        Suggested unused keys:
-                        <span style={{ marginLeft: 6 }}>
-                          {suggestedUnusedKeys.map((k) => (
-                            <button
-                              key={k}
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  await navigator.clipboard.writeText(k);
-                                  setLastCopiedKey(k);
-                                  setLastCopiedKeyAt(Date.now());
-                                  pushToast(`Key copied: ${k}`, "success");
-                                } catch {
-                                  window.prompt("Copy suggested key:", k);
-                                }
-                              }}
-                              style={{
-                                marginLeft: 6,
-                                padding: "2px 8px",
-                                borderRadius: 999,
-                                border: "1px solid rgba(0,0,0,0.14)",
-                                background: lastCopiedKey === k ? "rgba(25,113,194,0.15)" : "rgba(0,0,0,0.03)",
-                                cursor: "pointer",
-                                fontSize: 12,
-                              }}
-                              title={lastCopiedKey === k ? "Copied" : "Click to copy"}
-                            >
-                              {k}
-                              {lastCopiedKey === k ? <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.8 }}>(copied)</span> : null}
-                            </button>
-                          ))}
-                        </span>
-                      </div>
-                    ) : null}
-
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
-                      <div style={{ fontSize: 12, opacity: 0.9 }}>
-                        <span style={{ fontWeight: 600 }}>Helper:</span>
-                        <span style={{ marginLeft: 6 }}>Pick an action and copy a replacement template.</span>
-                        <span
-                          style={{ marginLeft: 10, opacity: 0.85 }}
-                          title="Why this key? Suggestions are category-aware and avoid common browser-reserved shortcuts (e.g. ctrl+r, ctrl+l, ctrl+t)."
-                        >
-                          (Why this key?)
-                        </span>
-                      </div>
-
-                      <button
-                        className="secondary-btn"
-                        onClick={() => {
-                          setConflictActionChoice("");
-                          setConflictSuggestedKey("");
-                          try {
-                            window.localStorage.removeItem("auditLogs.conflictActionChoice");
-                            window.localStorage.removeItem("auditLogs.conflictSuggestedKey");
-                          } catch {
-                            // ignore
-                          }
-                        }}
-                        title="Reset helper selection"
-                      >
-                        Reset helper
-                      </button>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
-                      <select
-                        value={conflictActionChoice}
-                        onChange={(e) => setConflictActionChoice(e.target.value)}
-                        style={{ padding: 6, borderRadius: 10, border: "1px solid rgba(0,0,0,0.14)", background: "white" }}
-                        aria-label="Choose action"
-                      >
-                        <option value="">Select action...</option>
-                        {Array.from(new Set(shortcutConflicts.flatMap((c) => c.actions)))
-                          .sort()
-                          .map((a) => (
-                            <option key={a} value={a}>
-                              {a}
-                            </option>
-                          ))}
-                      </select>
-
-                      <select
-                        value={conflictSuggestedKey}
-                        onChange={(e) => setConflictSuggestedKey(e.target.value)}
-                        disabled={!suggestedUnusedKeys.length}
-                        style={{ padding: 6, borderRadius: 10, border: "1px solid rgba(0,0,0,0.14)", background: "white" }}
-                        aria-label="Choose suggested key"
-                        title={selectedConflictCategory ? `Suggestions for category: ${selectedConflictCategory}` : undefined}
-                      >
-                        {suggestedUnusedKeys.length ? null : <option value="">(no suggestions)</option>}
-                        {suggestedUnusedKeys.map((k) => (
-                          <option key={k} value={k}>
-                            {k}
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        className="secondary-btn"
-                        disabled={!conflictSuggestedKey}
-                        onClick={async () => {
-                          const key = conflictSuggestedKey;
-                          try {
-                            await navigator.clipboard.writeText(key);
-                            setLastCopiedKey(key);
-                            setLastCopiedKeyAt(Date.now());
-                            pushToast(`Key copied: ${key}`, "success");
-                          } catch {
-                            window.prompt("Copy key:", key);
-                          }
-                        }}
-                        title="Copy only the key"
-                      >
-                        Copy key
-                      </button>
-
-                      <button
-                        className="secondary-btn"
-                        disabled={!conflictActionChoice}
-                        onClick={async () => {
-                          const suggestion = conflictSuggestedKey || suggestedUnusedKeys[0] || "(pick a free key)";
-                          const text = `Suggest changing shortcut for action "${conflictActionChoice}" to: ${suggestion}`;
-                          try {
-                            await navigator.clipboard.writeText(text);
-                            setLastCopiedTemplate(text);
-                            setLastCopiedTemplateAt(Date.now());
-                            pushToast("Suggestion copied", "success");
-                          } catch {
-                            window.prompt("Copy suggestion:", text);
-                          }
-                        }}
-                        title={
-                          selectedConflictCategory
-                            ? `Why this key? Suggested for category '${selectedConflictCategory}'. Candidates avoid common browser shortcuts and try to minimize collisions.`
-                            : "Why this key? Candidates avoid common browser shortcuts and try to minimize collisions."
-                        }
-                      >
-                        Copy suggestion
-                      </button>
-                    </div>
-
-                    {lastCopiedKey || lastCopiedTemplate ? (
-                      <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                        {lastCopiedKey ? (
-                          <span>
-                            Last key: <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" }}>{lastCopiedKey}</span>
-                            <span style={{ marginLeft: 6, fontSize: 12, opacity: 0.7 }}>{formatAgo(lastCopiedKeyAt)}</span>
-                          </span>
-                        ) : null}
-                        {lastCopiedTemplate ? (
-                          <span>
-                            Last template:
-                            <span
-                              style={{
-                                fontFamily:
-                                  "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-                                marginLeft: 6,
-                              }}
-                            >
-                              {(() => {
-                                const limit = lastTemplateTruncate === "full" ? null : lastTemplateTruncate;
-                                if (showFullLastTemplate || limit === null || lastCopiedTemplate.length <= limit) return lastCopiedTemplate;
-                                return `${lastCopiedTemplate.slice(0, limit)}…`;
-                              })()}
-                            </span>
-                            <span style={{ marginLeft: 6, fontSize: 12, opacity: 0.7 }}>{formatAgo(lastCopiedTemplateAt)}</span>
-                            {lastTemplateTruncate !== "full" && lastCopiedTemplate.length > lastTemplateTruncate ? (
-                              <button
-                                type="button"
-                                onClick={() => setShowFullLastTemplate((v) => !v)}
-                                style={{
-                                  marginLeft: 8,
-                                  padding: 0,
-                                  border: 0,
-                                  background: "transparent",
-                                  color: "#1c7ed6",
-                                  textDecoration: "underline",
-                                  cursor: "pointer",
-                                  fontSize: 12,
-                                }}
-                              >
-                                {showFullLastTemplate ? "collapse" : "expand"}
-                              </button>
-                            ) : null}
-                          </span>
-
-                          <span style={{ marginLeft: 10 }}>
-                            <label style={{ fontSize: 12, opacity: 0.8, marginRight: 6 }}>Truncate</label>
-                            <select
-                              value={lastTemplateTruncate as any}
-                              onChange={(e) => setLastTemplateTruncate(e.target.value === "full" ? "full" : (Number(e.target.value) as 120 | 300))}
-                              style={{ padding: 4, borderRadius: 8, border: "1px solid rgba(0,0,0,0.14)", background: "white", fontSize: 12 }}
-                            >
-                              <option value={120}>120</option>
-                              <option value={300}>300</option>
-                              <option value="full">full</option>
-                            </select>
-                          </span>
-                        ) : null}
-
-                        {lastCopiedKey ? (
-                          <button
-                            className="secondary-btn"
-                            onClick={async () => {
-                              const text = lastCopiedKey;
-                              try {
-                                await navigator.clipboard.writeText(text);
-                                pushToast("Key copied", "success");
-                              } catch {
-                                window.prompt("Copy key:", text);
-                              }
-                            }}
-                            title="Copy last key"
-                          >
-                            Copy last key
-                          </button>
-                        ) : null}
-
-                        {lastCopiedTemplate ? (
-                          <button
-                            className="secondary-btn"
-                            onClick={async () => {
-                              const text = lastCopiedTemplate;
-                              try {
-                                await navigator.clipboard.writeText(text);
-                                pushToast("Template copied", "success");
-                              } catch {
-                                window.prompt("Copy template:", text);
-                              }
-                            }}
-                            title="Copy last template"
-                          >
-                            Copy last template
-                          </button>
-                        ) : null}
-
-                        {lastCopiedTemplate ? (
-                          <>
-                            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, opacity: 0.9 }}>
-                              <input
-                                type="checkbox"
-                                checked={bugReportIncludeConflicts}
-                                onChange={(e) => setBugReportIncludeConflicts(e.target.checked)}
-                              />
-                              include conflicts
-                            </label>
-                            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, opacity: 0.9 }}>
-                              <input type="checkbox" checked={bugReportIncludeUsedKeys} onChange={(e) => setBugReportIncludeUsedKeys(e.target.checked)} />
-                              include used keys
-                            </label>
-
-                            <button
-                              className="secondary-btn"
-                              onClick={async () => {
-                                const report = buildBugReportText();
-                                try {
-                                  await navigator.clipboard.writeText(report);
-                                  pushToast("Bug report copied", "success");
-                                } catch {
-                                  window.prompt("Copy bug report:", report);
-                                }
-                              }}
-                              title="Copy bug report (text)"
-                            >
-                              Copy as bug report
-                            </button>
-
-                            <button
-                              className="secondary-btn"
-                              onClick={async () => {
-                                const text = JSON.stringify(buildBugReportData(), null, 2);
-                                try {
-                                  await navigator.clipboard.writeText(text);
-                                  pushToast("Bug report JSON copied", "success");
-                                } catch {
-                                  window.prompt("Copy bug report JSON:", text);
-                                }
-                              }}
-                              title="Copy bug report (JSON)"
-                            >
-                              Copy JSON
-                            </button>
-
-                            <button
-                              className="secondary-btn"
-                              onClick={() => {
-                                const report = buildBugReportText();
-                                const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = `shortcuts-bug-report-${new Date().toISOString().slice(0, 10)}.txt`;
-                                document.body.appendChild(a);
-                                a.click();
-                                a.remove();
-                                URL.revokeObjectURL(url);
-                              }}
-                              title="Download bug report (.txt)"
-                            >
-                              Download bug report
-                            </button>
-
-                            <button
-                              className="secondary-btn"
-                              onClick={() => {
-                                const text = JSON.stringify(buildBugReportData(), null, 2);
-                                const blob = new Blob([text], { type: "application/json;charset=utf-8" });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = `shortcuts-bug-report-${new Date().toISOString().slice(0, 10)}.json`;
-                                document.body.appendChild(a);
-                                a.click();
-                                a.remove();
-                                URL.revokeObjectURL(url);
-                              }}
-                              title="Download bug report (JSON)"
-                            >
-                              Download JSON
-                            </button>
-
-                            <button
-                              className="secondary-btn"
-                              onClick={async () => {
-                                const title = "[Audit Logs] Shortcuts conflict / suggestion";
-                                const report = buildBugReportText();
-                                const body = [
-                                  "## Summary",
-                                  "Describe what you expected vs what happened.",
-                                  "",
-                                  "## Context",
-                                  `Time: ${new Date().toISOString()}`,
-                                  "",
-                                  "## Details",
-                                  "```",
-                                  report,
-                                  "```",
-                                ].join("\n");
-
-                                const issueTemplate = [`Title: ${title}`, "", body].join("\n");
-
-                                try {
-                                  await navigator.clipboard.writeText(issueTemplate);
-                                  pushToast("Issue template copied", "success");
-                                } catch {
-                                  window.prompt("Copy issue template:", issueTemplate);
-                                }
-                              }}
-                              title="Copy a Jira/GitHub-ready issue template"
-                            >
-                              Copy issue template
-                            </button>
-
-                            <button
-                              className="secondary-btn"
-                              onClick={async () => {
-                                const report = buildBugReportText();
-                                const markdown = [
-                                  "## Audit Logs Shortcuts Report",
-                                  `Time: ${new Date().toISOString()}`,
-                                  "",
-                                  "```",
-                                  report,
-                                  "```",
-                                ].join("\n");
-
-                                try {
-                                  await navigator.clipboard.writeText(markdown);
-                                  pushToast("Markdown copied", "success");
-                                } catch {
-                                  window.prompt("Copy markdown:", markdown);
-                                }
-                              }}
-                              title="Copy Markdown body"
-                            >
-                              Copy Markdown
-                            </button>
-
-                            <button
-                              className="secondary-btn"
-                              onClick={() => {
-                                setReportPreviewOpen(true);
-                              }}
-                              title="Preview report"
-                            >
-                              Preview
-                            </button>
-                          </>
-                        ) : null}
-
-                        <button
-                          className="secondary-btn"
-                          onClick={() => {
-                            setLastCopiedKey(null);
-                            setLastCopiedKeyAt(null);
-                            try {
-                              window.localStorage.removeItem("auditLogs.lastCopiedKey");
-                              window.localStorage.removeItem("auditLogs.lastCopiedKeyAt");
-                            } catch {
-                              // ignore
-                            }
-                          }}
-                          disabled={!lastCopiedKey}
-                          title="Clear key history"
-                        >
-                          Clear key
-                        </button>
-                        <button
-                          className="secondary-btn"
-                          onClick={() => {
-                            setLastCopiedTemplate(null);
-                            setLastCopiedTemplateAt(null);
-                            try {
-                              window.localStorage.removeItem("auditLogs.lastCopiedTemplate");
-                              window.localStorage.removeItem("auditLogs.lastCopiedTemplateAt");
-                            } catch {
-                              // ignore
-                            }
-                          }}
-                          disabled={!lastCopiedTemplate}
-                          title="Clear template history"
-                        >
-                          Clear template
-                        </button>
-                        <button
-                          className="secondary-btn"
-                          onClick={() => {
-                            setLastCopiedKey(null);
-                            setLastCopiedKeyAt(null);
-                            setLastCopiedTemplate(null);
-                            setLastCopiedTemplateAt(null);
-                            try {
-                              window.localStorage.removeItem("auditLogs.lastCopiedKey");
-                              window.localStorage.removeItem("auditLogs.lastCopiedKeyAt");
-                              window.localStorage.removeItem("auditLogs.lastCopiedTemplate");
-                              window.localStorage.removeItem("auditLogs.lastCopiedTemplateAt");
-                              window.localStorage.removeItem("auditLogs.lastCopiedSuggestion");
-                            } catch {
-                              // ignore
-                            }
-                          }}
-                          title="Clear all history"
-                        >
-                          Clear all
-                        </button>
-                      </div>
-                    ) : null}
-
-                    {(() => {
-                      if (!conflictSuggestedKey) return null;
-                      const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
-                      if (isMac) return null;
-                      if (!conflictSuggestedKey.includes("cmd")) return null;
-                      return (
-                        <div style={{ fontSize: 12, color: "#b00020", marginBottom: 10 }}>
-                          Warning: <b>cmd</b> shortcuts may not work on Windows/Linux. Consider using <b>ctrl</b> alternatives.
-                        </div>
-                      );
-                    })()}
-
-                    {shortcutConflicts
-                      .filter((c) => {
-                        const q = conflictsSearch.trim().toLowerCase();
-                        if (!q) return true;
-                        return `${c.key} ${c.actions.join(" ")}`.toLowerCase().includes(q);
-                      })
-                      .map((c) => (
-                        <div key={c.key} style={{ fontSize: 12 }}>
-                          <b>{c.key}</b> <span style={{ opacity: 0.75 }}>(canonical)</span>: {c.actions.join(", ")}
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <table style={{ width: "100%" }}>
-                <tbody>
-                  {filteredShortcuts.map((s) => {
-                    const rowHasConflict = splitAlternatives(s.key).some((alt) => conflictKeySet.has(canonicalizeShortcutCombo(alt)));
-                    return (
-                      <tr
-                        key={`${s.action}-${s.key}`}
-                        style={
-                          rowHasConflict
-                            ? { background: "rgba(176,0,32,0.06)", borderTop: "1px solid rgba(176,0,32,0.10)", borderBottom: "1px solid rgba(176,0,32,0.10)" }
-                            : undefined
-                        }
-                      >
-                        <td style={{ width: 180, opacity: 0.75 }}>
-                          {s.action}
-                          {rowHasConflict ? <span style={{ marginLeft: 8, fontSize: 12, color: "#b00020" }}>(conflict)</span> : null}
-                        </td>
-                      <td
-                        title={`canonical: ${splitAlternatives(s.key)
-                          .map((alt) => canonicalizeShortcutCombo(alt))
-                          .filter(Boolean)
-                          .join(" / ")}`}
-                      >
-                        {splitAlternatives(s.key).map((part, idx) => {
-                          const label = part;
-                          // Support combos like "Ctrl+K"
-                          const combo = label.split("+").map((x) => x.trim()).filter(Boolean);
-
-                          const comboPressed = combo.every((t) => pressedKeys.has(normalizeShortcutKey(t)));
-
-                          return (
-                            <span key={`${label}-${idx}`}>
-                              {combo.map((token, j) => (
-                                <span key={`${token}-${j}`}>
-                                  <kbd
-                                    style={{
-                                      display: "inline-block",
-                                      padding: "2px 8px",
-                                      borderRadius: 8,
-                                      border: "1px solid rgba(0,0,0,0.20)",
-                                      background: comboPressed ? "rgba(25,113,194,0.15)" : "rgba(0,0,0,0.04)",
-                                      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-                                      fontSize: 12,
-                                    }}
-                                  >
-                                    {token}
-                                  </kbd>
-                                  {j < combo.length - 1 ? <span style={{ margin: "0 6px" }}>+</span> : null}
-                                </span>
-                              ))}
-                              {idx < splitAlternatives(s.key).length - 1 ? <span style={{ margin: "0 6px" }}>/</span> : null}
-                            </span>
-                          );
-                        })}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {!filteredShortcuts.length ? (
-                    <tr>
-                      <td colSpan={2} style={{ paddingTop: 10, opacity: 0.75 }}>
-                        No shortcuts match.
-                      </td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-              <p style={{ marginTop: 10, opacity: 0.75 }}>Tips: shortcut bekerja saat kamu tidak sedang mengetik di input.</p>
+              <p style={{ margin: 0, opacity: 0.8 }}>
+                Shortcuts helper sedang dinonaktifkan sementara untuk merapihkan parsing/TypeScript.
+                Akan diaktifkan lagi setelah refactor.
+              </p>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
       {jobDetailId ? (
         <div
@@ -3798,12 +3015,18 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
 
       {exportJobs.length ? (
         <div className="card" style={{ marginTop: 12 }}>
-          <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <h4 style={{ margin: 0 }}>Export Jobs (latest 20)</h4>
-            <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, opacity: 0.9 }}>
-              <input type="checkbox" checked={showActiveExportsOnly} onChange={(e) => setShowActiveExportsOnly(e.target.checked)} />
-              Show only active (pending/running)
-            </label>
+          <div className="card-header">
+            <div className="btn-row btn-row--between" style={{ alignItems: "baseline" }}>
+              <h4 style={{ margin: 0 }}>Export Jobs (latest 20)</h4>
+              <label className="check-row" style={{ fontSize: 13, opacity: 0.9 }}>
+                <input
+                  type="checkbox"
+                  checked={showActiveExportsOnly}
+                  onChange={(e) => setShowActiveExportsOnly(e.target.checked)}
+                />
+                Show only active (pending/running)
+              </label>
+            </div>
           </div>
           <div style={{ padding: 12 }}>
             <div
@@ -3842,10 +3065,10 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                         {j.error ?? "-"}
                       </td>
                       <td>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <div className="btn-row">
                           {j.status === "completed" ? (
                             <>
-                              <a className="secondary-btn" href={`/api/admin/audit-logs/exports/${j.id}/download`}>
+                              <a className="secondary-btn secondary-btn--sm" href={`/api/admin/audit-logs/exports/${j.id}/download`}>
                                 Download
                               </a>
                               <button
@@ -3969,7 +3192,7 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                   Load more
                 </button>
               ) : null}
-              <button className="secondary-btn" onClick={() => void loadExportJobs()}>
+              <button className="secondary-btn secondary-btn--sm" onClick={() => void loadExportJobs()}>
                 Refresh list
               </button>
             </div>
@@ -3984,10 +3207,10 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
         <div style={{ flex: 1, minWidth: 280 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <span style={{ fontSize: 12, opacity: 0.8 }}>Presets:</span>
-            <button className="secondary-btn" style={{ padding: "6px 10px", borderRadius: 10 }} onClick={() => setRangePreset(15 * 60 * 1000)}>
+            <button className="secondary-btn secondary-btn--sm" onClick={() => setRangePreset(15 * 60 * 1000)}>
               Last 15m
             </button>
-            <button className="secondary-btn" style={{ padding: "6px 10px", borderRadius: 10 }} onClick={() => setRangePreset(60 * 60 * 1000)}>
+            <button className="secondary-btn secondary-btn--sm" onClick={() => setRangePreset(60 * 60 * 1000)}>
               Last 1h
             </button>
             <button
@@ -4009,7 +3232,7 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
             >
               Last 24h
             </button>
-            <button className="secondary-btn" style={{ padding: "6px 10px", borderRadius: 10 }} onClick={() => setRangePreset(7 * 24 * 60 * 60 * 1000)}>
+            <button className="secondary-btn secondary-btn--sm" onClick={() => setRangePreset(7 * 24 * 60 * 60 * 1000)}>
               Last 7d
             </button>
 
@@ -4208,6 +3431,91 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
             </div>
           </div>
 
+          <div className="audit-quick-presets">
+            {[
+              {
+                label: "Today",
+                onClick: () => {
+                  const fromIso = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+                  const toIso = new Date().toISOString();
+                  setCreatedAtFromInput(fromIso);
+                  setCreatedAtToInput(toIso);
+                  setCreatedAtFromLocal(isoToLocalInput(fromIso));
+                  setCreatedAtToLocal(isoToLocalInput(toIso));
+                  if (autoApply) applyDraftToUrl();
+                },
+              },
+              {
+                label: "Last 7 Days",
+                onClick: () => {
+                  const fromIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+                  const toIso = new Date().toISOString();
+                  setCreatedAtFromInput(fromIso);
+                  setCreatedAtToInput(toIso);
+                  setCreatedAtFromLocal(isoToLocalInput(fromIso));
+                  setCreatedAtToLocal(isoToLocalInput(toIso));
+                  if (autoApply) applyDraftToUrl();
+                },
+              },
+              {
+                label: "Critical",
+                onClick: () => {
+                  setStatusCodeInput("400");
+                  setActionInput("auth.");
+                  if (autoApply) applyDraftToUrl();
+                },
+              },
+            ].map((preset) => (
+              <button key={preset.label} className="secondary-btn" type="button" onClick={preset.onClick}>
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="saved-searches">
+            <div>
+              <p className="saved-searches__title">Saved search highlights</p>
+              <p className="saved-searches__note">Akses cepat ke filter populer tim.</p>
+            </div>
+            <div className="saved-searches__chips">
+              <button className="secondary-btn" type="button">Failed logins</button>
+              <button className="secondary-btn" type="button">Admin changes</button>
+              <button className="secondary-btn" type="button">High latency</button>
+            </div>
+          </div>
+
+          <div className="noise-toggle">
+            <div>
+              <p className="noise-toggle__title">Noise reduction</p>
+              <p className="noise-toggle__note">Tampilkan hanya severity tinggi.</p>
+            </div>
+            <button className="secondary-btn" type="button">Toggle high severity</button>
+          </div>
+
+          <div className="retention-reminder">
+            <div>
+              <p className="retention-reminder__title">Retention policy reminder</p>
+              <p className="retention-reminder__note">Policy default 90 hari. Review sebelum 31 Jan.</p>
+            </div>
+            <button className="secondary-btn" type="button">Review policy</button>
+          </div>
+
+          <div className="integrity-score">
+            <div>
+              <p className="integrity-score__title">Log integrity score</p>
+              <p className="integrity-score__note">Skor konsistensi log: 94% (Good)</p>
+            </div>
+            <button className="secondary-btn" type="button">View details</button>
+          </div>
+
+          <div className="compliance-snapshot">
+            <div>
+              <p className="compliance-snapshot__title">Compliance snapshot</p>
+              <p className="compliance-snapshot__note">2 policy perlu audit ulang minggu ini.</p>
+            </div>
+            <button className="secondary-btn" type="button">Open checklist</button>
+          </div>
+
           {activeFilterChips.length ? (
             <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <span style={{ fontSize: 12, opacity: 0.75 }}>Active filters:</span>
@@ -4234,7 +3542,7 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                     style={{ padding: "2px 8px", borderRadius: 999 }}
                     title={`Remove ${c.label}`}
                   >
-                    ×
+                    Ã—
                   </button>
                 </span>
               ))}
@@ -4431,29 +3739,31 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
         </div>
       </div>
 
-      {error ? (
-        <div className="auth-form-error" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <span>{error}</span>
-          <button className="secondary-btn" onClick={() => setReloadTick((n) => n + 1)} disabled={isLoading}>
-            Retry
-          </button>
-        </div>
-      ) : null}
+      <FormError
+        message={error ?? undefined}
+        action={
+          error ? (
+            <button className="secondary-btn" onClick={() => setReloadTick((n) => n + 1)} disabled={isLoading}>
+              Retry
+            </button>
+          ) : null
+        }
+      />
 
       {isLoading ? (
         <div
-          className="table-container"
-          style={{ marginTop: 12, borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)", overflow: "hidden" }}
+          className="table-container table-container--bordered"
+          style={{ marginTop: 12, borderRadius: 12, overflow: "hidden" }}
           aria-busy="true"
           aria-label="Loading audit logs"
         >
           <table>
             <thead>
               <tr style={{ background: "white" }}>
-                <th>Waktu</th>
-                <th>Action</th>
-                <th>UserId</th>
-                <th>IP</th>
+                <th style={{ width: 190 }}>Waktu</th>
+                <th style={{ width: 240 }}>Action</th>
+                <th style={{ width: 240 }}>UserId</th>
+                <th style={{ width: 140 }}>IP</th>
                 <th>Meta</th>
               </tr>
             </thead>
@@ -4462,16 +3772,7 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                 <tr key={i} style={{ height: AUDIT_ROW_HEIGHT }}>
                   {Array.from({ length: 5 }).map((__, j) => (
                     <td key={j}>
-                      <div
-                        aria-hidden
-                        style={{
-                          height: 12,
-                          width: j === 4 ? "90%" : "60%",
-                          background: "linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.10), rgba(0,0,0,0.05))",
-                          backgroundSize: "200% 100%",
-                          borderRadius: 8,
-                        }}
-                      />
+                      <SkeletonBlock height={12} width={j === 4 ? "90%" : "60%"} radius={8} />
                     </td>
                   ))}
                 </tr>
@@ -4480,12 +3781,39 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
           </table>
         </div>
       ) : rows.length === 0 ? (
-        <p style={{ marginTop: 12, opacity: 0.8 }}>
-          Belum ada audit log yang cocok.
-          {query.action || query.q || query.targetUserId || query.targetEmail || query.resource || query.statusCode || query.createdAtFrom || query.createdAtTo || query.meta
-            ? " (Coba longgarkan filter / ubah range waktu.)"
-            : ""}
-        </p>
+        <div style={{ marginTop: 12 }}>
+          <EmptyState
+            title="Tidak ada audit log"
+            description={
+              query.action ||
+              query.q ||
+              query.targetUserId ||
+              query.targetEmail ||
+              query.resource ||
+              query.statusCode ||
+              query.createdAtFrom ||
+              query.createdAtTo ||
+              query.meta
+                ? "Belum ada audit log yang cocok. Coba longgarkan filter / ubah range waktu."
+                : "Belum ada audit log."
+            }
+            action={
+              query.action ||
+              query.q ||
+              query.targetUserId ||
+              query.targetEmail ||
+              query.resource ||
+              query.statusCode ||
+              query.createdAtFrom ||
+              query.createdAtTo ||
+              query.meta ? (
+                <button className="secondary-btn" onClick={() => setUrlQuery({ action: "", q: "", meta: false, targetUserId: "", targetEmail: "", resource: "", statusCode: "", createdAtFrom: "", createdAtTo: "", cursor: "", dir: "next" })}>
+                  Reset filter
+                </button>
+              ) : null
+            }
+          />
+        </div>
       ) : (
         <>
           {expandedId ? (
@@ -4694,16 +4022,16 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
 
           <div
             ref={auditTableRef}
-            className="table-container"
-            style={{ marginTop: 12, maxHeight: 520, overflow: "auto", borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)" }}
+            className="table-container table-container--bounded table-container--bordered"
+            style={{ marginTop: 12, borderRadius: 12 }}
           >
             <table>
             <thead>
-              <tr style={{ position: "sticky", top: 0, background: "white", zIndex: 1 }}>
-                <th>Waktu</th>
-                <th>Action</th>
-                <th>UserId</th>
-                <th>IP</th>
+              <tr>
+                <th style={{ width: 190 }}>Waktu</th>
+                <th style={{ width: 240 }}>Action</th>
+                <th style={{ width: 240 }}>UserId</th>
+                <th style={{ width: 140 }}>IP</th>
                 <th>Meta</th>
               </tr>
             </thead>
@@ -4719,20 +4047,19 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
                   }}
                 >
                   <td style={{ whiteSpace: "nowrap" }}>{new Date(r.createdAt).toLocaleString()}</td>
-                  <td style={{ maxWidth: 220, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{highlightText(r.action, qInput)}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>{r.userId ?? "-"}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>{r.ip ?? "-"}</td>
+                  <td className="text-truncate" style={{ maxWidth: 240 }}>{highlightText(r.action, qInput)}</td>
+                  <td className="mono text-truncate" style={{ maxWidth: 240 }}>{r.userId ?? "-"}</td>
+                  <td className="mono" style={{ whiteSpace: "nowrap" }}>{r.ip ?? "-"}</td>
                   <td style={{ maxWidth: 520 }}>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 360 }}>
+                    <div className="btn-row">
+                      <span className="text-truncate" style={{ maxWidth: 420 }}>
                         {(() => {
                           const v = (expandedId === r.id ? metaById[r.id] ?? r.meta : r.metaPreview) ?? "-";
                           return typeof v === "string" ? highlightText(v, qInput) : v;
                         })()}
                       </span>
                       <button
-                        className="secondary-btn"
-                        style={{ padding: "6px 10px", borderRadius: 10 }}
+                        className="secondary-btn secondary-btn--sm"
                         onClick={() => void openAuditLog(r.id)}
                         disabled={Boolean(isLoadingMeta[r.id])}
                         aria-expanded={expandedId === r.id}
@@ -4750,30 +4077,6 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
         </div>
         </>
       )}
-    {/* Toasts */}
-    {toasts.length ? (
-      <div style={{ position: "fixed", right: 14, bottom: 14, display: "grid", gap: 8, zIndex: 200 }} aria-live="polite">
-        {toasts.map((t) => {
-          const bg = t.type === "success" ? "#1b5e20" : t.type === "error" ? "#b00020" : "#263238";
-          return (
-            <div
-              key={t.id}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 12,
-                background: bg,
-                color: "white",
-                boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
-                fontSize: 13,
-                maxWidth: 360,
-              }}
-            >
-              {t.message}
-            </div>
-          );
-        })}
-      </div>
-    ) : null}
     </div>
   );
 }

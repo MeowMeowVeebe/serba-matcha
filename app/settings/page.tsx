@@ -1,249 +1,270 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { logout, logoutAll, me, updateProfile, type AuthUser } from "@/lib/authClient";
+import { updateProfile } from "@/lib/authClient";
+import AccountShell from "@/components/AccountShell";
 import { useAlert } from "../../context/AlertContext";
+import { TextField } from "@/components/form/TextField";
+import PasswordField from "@/components/form/PasswordField";
+import PrimaryButton from "@/components/form/PrimaryButton";
+import FormError from "@/components/form/FormError";
+import { SmartSkeleton } from "@/components/ui/SmartSkeleton";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import styles from "./Settings.module.css";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [errors, setErrors] = useState<{ name?: string; oldPassword?: string; newPassword?: string; confirmNewPassword?: string; form?: string }>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
   const [showLogoutAllConfirm, setShowLogoutAllConfirm] = useState(false);
-
+  const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
   const { showAlert } = useAlert();
+
+  const mismatch = useMemo(() => {
+    if (!newPassword || !confirmNewPassword) return false;
+    return newPassword !== confirmNewPassword;
+  }, [newPassword, confirmNewPassword]);
 
   const canSave = useMemo(() => {
     if (isSaving) return false;
-    // Boleh save name saja tanpa old password
-    if (newPassword && !oldPassword) return false;
+    if (!name.trim()) return false;
+
+    // if changing password -> require old + confirm + min length
+    if (newPassword || confirmNewPassword) {
+      if (!oldPassword) return false;
+      if (!newPassword || newPassword.length < 8) return false;
+      if (mismatch) return false;
+    }
+
     return true;
-  }, [isSaving, newPassword, oldPassword]);
+  }, [isSaving, name, newPassword, confirmNewPassword, oldPassword, mismatch]);
 
-  useEffect(() => {
-    document.body.className = theme;
-  }, [theme]);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+  const oldPasswordRef = useRef<HTMLInputElement | null>(null);
+  const newPasswordRef = useRef<HTMLInputElement | null>(null);
+  const confirmNewPasswordRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    void (async () => {
-      setIsLoadingUser(true);
-      const res = await me();
-      if (!res.ok) {
-        router.push("/login");
-        return;
-      }
-      setUser(res.user);
-      setName(res.user.name);
-      setEmail(res.user.email);
-      setIsLoadingUser(false);
-    })();
-  }, [router]);
+  const validate = () => {
+    const next: typeof errors = {};
 
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-    setIsLoggingOut(true);
-    try {
-      await logout();
-    } finally {
-      setIsLoggingOut(false);
-      router.push("/login");
+    if (!name.trim()) next.name = "Nama wajib diisi.";
+    else if (name.trim().length < 2) next.name = "Nama minimal 2 karakter.";
+
+    if (newPassword || confirmNewPassword) {
+      if (!oldPassword) next.oldPassword = "Password lama wajib diisi untuk mengganti password.";
+      if (!newPassword) next.newPassword = "Password baru wajib diisi.";
+      else if (newPassword.length < 8) next.newPassword = "Password baru minimal 8 karakter.";
+
+      if (!confirmNewPassword) next.confirmNewPassword = "Konfirmasi password baru wajib diisi.";
+      else if (confirmNewPassword !== newPassword) next.confirmNewPassword = "Konfirmasi password tidak sama.";
     }
-  };
 
-  const handleLogoutAll = async () => {
-    if (isLoggingOutAll) return;
-    setIsLoggingOutAll(true);
-    try {
-      const res = await logoutAll();
-      showAlert(res.message ?? "Logout semua device.");
-    } finally {
-      setIsLoggingOutAll(false);
-      router.push("/login");
-    }
+    setErrors(next);
+
+    if (next.name) nameRef.current?.focus();
+    else if (next.oldPassword) oldPasswordRef.current?.focus();
+    else if (next.newPassword) newPasswordRef.current?.focus();
+    else if (next.confirmNewPassword) confirmNewPasswordRef.current?.focus();
+
+    return Object.keys(next).length === 0;
   };
 
   const handleSave = async () => {
-    if (!canSave) return;
+    if (isSaving) return;
+    setErrors({});
+    if (!validate()) return;
+
+    const isChangingPassword = Boolean(newPassword);
 
     setIsSaving(true);
     try {
       const res = await updateProfile({
         name,
-        oldPassword: oldPassword || undefined,
-        newPassword: newPassword || undefined,
+        oldPassword: isChangingPassword ? oldPassword : undefined,
+        newPassword: isChangingPassword ? newPassword : undefined,
       });
 
       if (!res.ok) {
-        showAlert(res.message);
+        setErrors({ form: res.message });
+        showAlert(res.message, { variant: "error" });
         return;
       }
 
-      setUser(res.user);
       setName(res.user.name);
       setEmail(res.user.email);
-      showAlert(res.message);
+
+      // If password changed, backend clears cookies -> force re-login.
+      if (isChangingPassword) {
+        showAlert(res.message, { variant: "warning", durationMs: 4500 });
+        router.push("/login");
+        return;
+      }
+
+      showAlert(res.message, { variant: "success" });
       setOldPassword("");
       setNewPassword("");
+      setConfirmNewPassword("");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const handleLogoutAll = async () => {
+    if (isLoggingOutAll) return;
+
+    setIsLoggingOutAll(true);
+    try {
+      const res = await fetch("/api/auth/logout-all", { method: "POST" });
+      const body = (await res.json().catch(() => null)) as unknown;
+      const message = typeof (body as any)?.message === "string" ? (body as any).message : "Logout semua device.";
+
+      if (!res.ok) {
+        showAlert(message, { variant: "error" });
+        return;
+      }
+
+      showAlert(message, { variant: "success" });
+
+      // Server clears auth cookies; move user to login.
+      router.push("/login");
+    } finally {
+      setIsLoggingOutAll(false);
+      setShowLogoutAllConfirm(false);
+    }
+  };
+
   return (
-    <>
-      {/* SIDEBAR */}
-      <div className="sidebar">
-        <h2>Serba Matchia</h2>
-
-        {isLoadingUser ? (
-          <div className="sidebar-user sidebar-user-skeleton" aria-hidden />
-        ) : user ? (
-          <div className="sidebar-user">
-            <div className="sidebar-avatar">{user.name.slice(0, 1).toUpperCase()}</div>
-            <div className="sidebar-user-meta">
-              <p className="sidebar-user-name">{user.name}</p>
-              <p className="sidebar-user-email">{user.email}</p>
+    <AccountShell
+      title="Settings"
+      description="Kelola profil dan keamanan akun"
+      breadcrumbs={[{ label: "Settings", href: "/settings" }]}
+      onUserLoaded={(u) => {
+        setName(u.name);
+        setEmail(u.email);
+      }}
+    >
+      {({ user, isLoadingUser, loadError }) => (
+        <div className={styles.page}>
+          {isLoadingUser ? (
+            <div className={styles.grid}>
+              <SmartSkeleton variant="form" />
+              <SmartSkeleton variant="form" />
             </div>
-          </div>
-        ) : null}
-
-        <Link className="nav-link" href="/dashboard">
-          Dashboard
-        </Link>
-        <Link className="nav-link active" href="/settings">
-          Settings
-        </Link>
-
-        <button className="nav-link nav-link-btn" onClick={handleLogout} disabled={isLoggingOut}>
-          {isLoggingOut ? "Logging out..." : "Logout"}
-        </button>
-      </div>
-
-      <div className="main">
-        <div className="header">
-          <h2>Settings</h2>
-          <button onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}>
-            Toggle Dark Mode
-          </button>
-        </div>
-
-        <div className="settings-grid">
-          {/* PROFILE */}
-          <div className="card">
-            <div className="card-header">
-              <h3>Your Profile</h3>
+          ) : !user ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>🔐</div>
+              <h3>Akses Terbatas</h3>
+              <p>{loadError ?? "Silakan login untuk mengakses settings."}</p>
+              <Link className="primary-btn" href="/login">Login</Link>
             </div>
+          ) : (
+            <>
+              <div className={styles.grid}>
+                {/* PROFILE CARD */}
+                <div className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <h3>Profil</h3>
+                    <p>Kelola informasi akun Anda</p>
+                  </div>
+                  <div className={styles.cardBody}>
+                    <TextField
+                      ref={nameRef}
+                      label="Nama Lengkap"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      error={errors.name}
+                    />
+                    <TextField label="Email" type="email" value={email} disabled />
+                  </div>
+                </div>
 
-            <div className="form-group">
-              <label>Nama Lengkap</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Email</label>
-              <input type="email" value={email} disabled />
-            </div>
-          </div>
-
-          {/* SECURITY */}
-          <div className="card">
-            <div className="card-header">
-              <h3>Keamanan</h3>
-              <p>Ubah password akun</p>
-            </div>
-
-            <div className="form-group">
-              <label>Password Lama</label>
-              <input
-                type="password"
-                placeholder="********"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Password Baru</label>
-              <input
-                type="password"
-                placeholder="********"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {showLogoutAllConfirm ? (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Konfirmasi logout semua device"
-            onClick={() => setShowLogoutAllConfirm(false)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.35)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 16,
-              zIndex: 300,
-            }}
-          >
-            <div
-              className="card"
-              onClick={(e) => e.stopPropagation()}
-              style={{ width: "min(560px, 96vw)", border: "1px solid rgba(0,0,0,0.12)" }}
-            >
-              <div className="card-header">
-                <h3 style={{ margin: 0 }}>Danger zone</h3>
-                <p style={{ margin: "6px 0 0", opacity: 0.8 }}>Logout semua device</p>
-              </div>
-              <div style={{ padding: 12 }}>
-                <p style={{ marginTop: 0 }}>
-                  Aksi ini akan mengeluarkan akun kamu dari <b>semua device</b> (semua refresh token disabut). Kamu perlu login ulang.
-                </p>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                  <button className="secondary-btn" onClick={() => setShowLogoutAllConfirm(false)} disabled={isLoggingOutAll}>
-                    Batal
-                  </button>
-                  <button
-                    className="primary-btn"
-                    onClick={() => void handleLogoutAll()}
-                    disabled={isLoggingOutAll}
-                    style={{ background: "#b00020" }}
-                  >
-                    {isLoggingOutAll ? "Logging out..." : "Ya, logout semua"}
-                  </button>
+                {/* SECURITY CARD */}
+                <div className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <h3>Keamanan</h3>
+                    <p>Ubah password akun Anda</p>
+                  </div>
+                  <div className={styles.cardBody}>
+                    <PasswordField
+                      ref={oldPasswordRef}
+                      label="Password Lama"
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      error={errors.oldPassword}
+                    />
+                    <PasswordField
+                      ref={newPasswordRef}
+                      label="Password Baru"
+                      autoComplete="new-password"
+                      placeholder="Minimal 8 karakter"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      error={errors.newPassword}
+                    />
+                    <PasswordField
+                      ref={confirmNewPasswordRef}
+                      label="Konfirmasi Password Baru"
+                      autoComplete="new-password"
+                      placeholder="Ulangi password baru"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      aria-invalid={Boolean(errors.confirmNewPassword) || mismatch}
+                      error={errors.confirmNewPassword}
+                      hint={!errors.confirmNewPassword && mismatch ? "Konfirmasi tidak sama." : undefined}
+                    />
+                    <p className={styles.hint}>
+                      Mengganti password akan logout otomatis.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        ) : null}
 
-        <div className="action-bar">
-          <button className="primary-btn" onClick={handleSave} disabled={!canSave}>
-            {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
-          </button>
-          <button className="secondary-btn" onClick={() => setShowLogoutAllConfirm(true)} disabled={isLoggingOutAll}>
-            Logout semua device
-          </button>
+              <FormError message={errors.form} />
+
+              <div className={styles.actions}>
+                <PrimaryButton
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!canSave}
+                  isLoading={isSaving}
+                  loadingLabel="Menyimpan..."
+                >
+                  Simpan Perubahan
+                </PrimaryButton>
+                <button 
+                  className="secondary-btn" 
+                  onClick={() => setShowLogoutAllConfirm(true)} 
+                  disabled={isLoggingOutAll}
+                >
+                  Logout Semua Device
+                </button>
+              </div>
+
+              <ConfirmModal
+                open={showLogoutAllConfirm}
+                title="Logout semua device?"
+                description="Semua sesi di perangkat lain akan berakhir."
+                confirmLabel="Logout Semua"
+                cancelLabel="Batal"
+                confirmVariant="danger"
+                isConfirming={isLoggingOutAll}
+                onCancel={() => setShowLogoutAllConfirm(false)}
+                onConfirm={handleLogoutAll}
+              />
+            </>
+          )}
         </div>
-      </div>
-    </>
+      )}
+    </AccountShell>
   );
 }

@@ -17,9 +17,23 @@ function optional(name: string, fallback = ""): string {
   return v && v.trim() ? v.trim() : fallback;
 }
 
+function requiredOneOf(names: string[]): string {
+  for (const name of names) {
+    const v = process.env[name];
+    if (v && v.trim()) return v.trim();
+  }
+
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return "";
+  }
+
+  throw new Error(`Missing required env: one of [${names.join(", ")}]`);
+}
+
 export const env = {
   DATABASE_URL: required("DATABASE_URL"),
-  JWT_SECRET: required("JWT_SECRET"),
+  // Backward compatible: some setups use AUTH_SECRET instead of JWT_SECRET
+  JWT_SECRET: requiredOneOf(["JWT_SECRET", "AUTH_SECRET"]),
 
   APP_BASE_URL: optional("APP_BASE_URL", "http://localhost:3000"),
 

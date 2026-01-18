@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import FormError from "@/components/form/FormError";
+import EmptyState from "@/components/ui/EmptyState";
+import SkeletonBlock from "@/components/ui/SkeletonBlock";
+import { useAlert } from "@/context/AlertContext";
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -76,9 +80,11 @@ function roleNames(roles?: Role[]) {
 
 export default function UsersClient({ initial }: { initial: AdminUsersInitialData }) {
   const router = useRouter();
+  const { showAlert } = useAlert();
 
   const [query, setQuery] = useState<QueryState>(initial.query);
   const [qInput, setQInput] = useState(initial.query.q);
+  const [roleFilterId, setRoleFilterId] = useState<string>("");
 
   const [rows, setRows] = useState<Row[]>(initial.rows);
   const [total, setTotal] = useState(initial.total);
@@ -234,8 +240,12 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
         .map(([id]) => id);
 
       const ok = await applyRolesForUser(userId, roleIds);
-      if (!ok) return;
+      if (!ok) {
+        showAlert("Gagal menyimpan roles untuk user.", { variant: "error" });
+        return;
+      }
 
+      showAlert("Roles user berhasil disimpan.", { variant: "success" });
       cancelEdit();
       // Re-fetch current page
       const usersUrl = new URL("/api/admin/users", window.location.origin);
@@ -253,59 +263,220 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
   };
 
   const bulkApply = async () => {
-   const userIds = Object.entries(bulkSelected)
-     .filter(([, v]) => v)
-     .map(([id]) => id);
-   if (!userIds.length) return;
+    const userIds = Object.entries(bulkSelected)
+      .filter(([, v]) => v)
+      .map(([id]) => id);
+    if (!userIds.length) {
+      showAlert("Pilih minimal 1 user.", { variant: "warning" });
+      return;
+    }
 
-   setIsBulkApplying(true);
-   try {
-     const roleIds = Object.entries(bulkRoleSelection)
-       .filter(([, v]) => v)
-       .map(([id]) => id);
+    // Snapshot current roles (for undo) from the currently loaded page rows.
+    // Note: this reliably supports undo for users that are present in the current page.
+    const prevRoleIdsByUser: Record<string, string[]> = {};
+    for (const uid of userIds) {
+      const u = rows.find((r) => r.id === uid);
+      prevRoleIdsByUser[uid] = Array.isArray(u?.roles) ? u!.roles!.map((rr) => rr.id) : [];
+    }
 
-     for (const uid of userIds) {
-       // Apply the same roleIds to all selected users
-       // (bulk replace, consistent with single-user edit)
-       // eslint-disable-next-line no-await-in-loop
-       const ok = await applyRolesForUser(uid, roleIds);
-       if (!ok) break;
-     }
+    setIsBulkApplying(true);
+    try {
+      const roleIds = Object.entries(bulkRoleSelection)
+        .filter(([, v]) => v)
+        .map(([id]) => id);
 
-     // Refresh current page
-     const usersUrl = new URL("/api/admin/users", window.location.origin);
-     if (query.q) usersUrl.searchParams.set("q", query.q);
-     usersUrl.searchParams.set("page", String(query.page));
-     usersUrl.searchParams.set("pageSize", String(pageSize));
-     const usersRes = await fetch(usersUrl.toString());
-     const usersData = (await usersRes.json().catch(() => null)) as ApiResponse | null;
-     setRows(Array.isArray(usersData?.users) ? usersData!.users : []);
-     setTotal(typeof usersData?.total === "number" ? usersData.total : 0);
+      let appliedCount = 0;
+      for (const uid of userIds) {
+        // Apply the same roleIds to all selected users
+        // (bulk replace, consistent with single-user edit)
+        // eslint-disable-next-line no-await-in-loop
+        const ok = await applyRolesForUser(uid, roleIds);
+        if (!ok) break;
+        appliedCount += 1;
+      }
 
-     setBulkSelected({});
-     setBulkRoleSelection({});
-   } finally {
-     setIsBulkApplying(false);
-   }
- };
+      // Refresh current page
+      const usersUrl = new URL("/api/admin/users", window.location.origin);
+      if (query.q) usersUrl.searchParams.set("q", query.q);
+      usersUrl.searchParams.set("page", String(query.page));
+      usersUrl.searchParams.set("pageSize", String(pageSize));
+      const usersRes = await fetch(usersUrl.toString());
+      const usersData = (await usersRes.json().catch(() => null)) as ApiResponse | null;
+      setRows(Array.isArray(usersData?.users) ? usersData!.users : []);
+      setTotal(typeof usersData?.total === "number" ? usersData.total : 0);
+
+      if (appliedCount > 0) {
+        showAlert(`Roles updated for ${appliedCount} user${appliedCount === 1 ? "" : "s"}.`, { variant: "success" });
+        setBulkUndo({
+          message: `Roles updated for ${appliedCount} user${appliedCount === 1 ? "" : "s"}.`,
+          userIds: userIds.slice(0, appliedCount),
+          prevRoleIdsByUser,
+        });
+      }
+
+      setBulkSelected({});
+      setBulkRoleSelection({});
+    } finally {
+      setIsBulkApplying(false);
+    }
+  };
+
+  const bulkUndoApply = async () => {
+    if (!bulkUndo) return;
+
+    setIsBulkUndoing(true);
+    setError(null);
+    try {
+      for (const uid of bulkUndo.userIds) {
+        const prev = bulkUndo.prevRoleIdsByUser[uid] ?? [];
+        // eslint-disable-next-line no-await-in-loop
+        const ok = await applyRolesForUser(uid, prev);
+        if (!ok) break;
+      }
+
+      // Refresh current page after undo
+      const usersUrl = new URL("/api/admin/users", window.location.origin);
+      if (query.q) usersUrl.searchParams.set("q", query.q);
+      usersUrl.searchParams.set("page", String(query.page));
+      usersUrl.searchParams.set("pageSize", String(pageSize));
+      const usersRes = await fetch(usersUrl.toString());
+      const usersData = (await usersRes.json().catch(() => null)) as ApiResponse | null;
+      setRows(Array.isArray(usersData?.users) ? usersData!.users : []);
+      setTotal(typeof usersData?.total === "number" ? usersData.total : 0);
+
+      setBulkUndo(null);
+    } finally {
+      setIsBulkUndoing(false);
+    }
+  };
+
+  const filteredRows = useMemo(() => {
+    if (!roleFilterId) return rows;
+    return rows.filter((u) => Array.isArray(u.roles) && u.roles.some((r) => r.id === roleFilterId));
+  }, [rows, roleFilterId]);
+
+  const UsersTableSkeleton = () => (
+    <div className="table-container" style={{ marginTop: 12 }} aria-busy="true" aria-label="Loading users">
+      <table>
+        <thead>
+          <tr>
+            <th style={{ width: 44 }} />
+            <th>Nama</th>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Dibuat</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <tr key={i}>
+              {Array.from({ length: 6 }).map((__, j) => (
+                <td key={j}>
+                  <SkeletonBlock height={12} width={j === 3 ? "80%" : "60%"} radius={8} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 
  return (
    <div className="card">
      <div className="card-header">
-       <h3>Daftar User</h3>
+       <h3 style={{ margin: 0 }}>Daftar</h3>
        <p>Total: {total}</p>
      </div>
 
-     <div style={{ marginTop: 12, padding: 12, borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", background: "rgba(0,0,0,0.03)" }}>
-       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+     <div className="role-coverage">
+       <div>
+         <p className="role-coverage__title">Role coverage radar</p>
+         <p className="role-coverage__note">Distribusi role aktif untuk pantau keseimbangan akses.</p>
+       </div>
+       <div className="role-coverage__chart">
+         {[
+           { label: "Admin", value: 72 },
+           { label: "Ops", value: 55 },
+           { label: "Finance", value: 38 },
+           { label: "Support", value: 64 },
+         ].map((item) => (
+           <div key={item.label} className="role-coverage__item">
+             <span>{item.label}</span>
+             <div className="role-coverage__bar">
+               <span style={{ width: `${item.value}%` }} />
+             </div>
+             <strong>{item.value}%</strong>
+           </div>
+         ))}
+       </div>
+     </div>
+
+     <div className="onboarding-progress">
+       <div>
+         <p className="onboarding-progress__title">Onboarding progress</p>
+         <p className="onboarding-progress__note">7 user baru belum menyelesaikan setup profile.</p>
+       </div>
+       <div className="onboarding-progress__ring">
+         <span>68%</span>
+       </div>
+     </div>
+
+     <div className="dormant-watchlist">
+       <div>
+         <p className="dormant-watchlist__title">Dormant users watchlist</p>
+         <p className="dormant-watchlist__note">User tidak aktif lebih dari 30 hari.</p>
+       </div>
+       <div className="dormant-watchlist__list">
+         <span>rian@serba.co</span>
+         <span>citra@serba.co</span>
+         <span>team.ops@serba.co</span>
+       </div>
+     </div>
+
+     <div className="role-rotation">
+       <div>
+         <p className="role-rotation__title">Role rotation reminder</p>
+         <p className="role-rotation__note">3 admin belum rotate role dalam 90 hari.</p>
+       </div>
+       <button className="secondary-btn" type="button">Schedule review</button>
+     </div>
+
+     <div className="access-review">
+       <div>
+         <p className="access-review__title">Access review queue</p>
+         <p className="access-review__note">5 user perlu verifikasi akses bulan ini.</p>
+       </div>
+       <button className="secondary-btn" type="button">Open queue</button>
+     </div>
+
+     <div className="ramp-up-tracker">
+       <div>
+         <p className="ramp-up-tracker__title">New hire ramp-up tracker</p>
+         <p className="ramp-up-tracker__note">3 user baru on-track, 2 butuh mentoring.</p>
+       </div>
+       <button className="secondary-btn" type="button">View progress</button>
+     </div>
+
+     <div className="role-drift">
+       <div>
+         <p className="role-drift__title">Role drift detector</p>
+         <p className="role-drift__note">2 user punya akses di luar scope.</p>
+       </div>
+       <button className="secondary-btn" type="button">Review drift</button>
+     </div>
+
+     <div className="panel">
+       <div className="btn-row btn-row--between">
          <b>Bulk roles</b>
          <button className="primary-btn" onClick={() => void bulkApply()} disabled={isBulkApplying}>
            {isBulkApplying ? "Applying..." : "Apply to selected"}
          </button>
        </div>
-       <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8 }}>
+       <div className="role-grid">
          {roles.map((r) => (
-           <label key={r.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+           <label key={r.id} className="check-row">
              <input
                type="checkbox"
                checked={Boolean(bulkRoleSelection[r.id])}
@@ -316,55 +487,79 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
            </label>
          ))}
        </div>
-       <p style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
+       <p className="helper-text">
          Pilih user via checkbox di tabel, lalu pilih roles di sini. Aksi ini akan <b>mengganti</b> roles user terpilih.
        </p>
      </div>
 
       <div className="action-bar" style={{ justifyContent: "space-between", marginTop: 12 }}>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="btn-row">
           <input
-            style={{ padding: 10, borderRadius: 12, border: "1px solid rgba(0,0,0,0.14)", minWidth: 240 }}
+            className="ghost-btn"
             placeholder="Cari nama/email..."
             value={qInput}
             onChange={(e) => setQInput(e.target.value)}
+            style={{ minWidth: 240 }}
           />
-          <button className="secondary-btn" onClick={() => setUrlQuery({ q: qInput, page: 1 })} disabled={isLoading}>
+          <select className="ghost-btn" value={roleFilterId} onChange={(e) => setRoleFilterId(e.target.value)} style={{ padding: 8, minWidth: 180 }}>
+            <option value="">All roles</option>
+            {roles.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+
+          <button className="secondary-btn secondary-btn--sm" onClick={() => setUrlQuery({ q: qInput, page: 1 })} disabled={isLoading}>
             Cari
           </button>
-          <button className="secondary-btn" onClick={() => setUrlQuery({ q: "", page: 1 })} disabled={isLoading}>
+          <button className="secondary-btn secondary-btn--sm" onClick={() => setUrlQuery({ q: "", page: 1 })} disabled={isLoading}>
             Reset
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div className="btn-row">
           <button
-            className="secondary-btn"
+            className="secondary-btn secondary-btn--sm"
             onClick={() => setUrlQuery({ page: Math.max(1, query.page - 1) })}
             disabled={isLoading || query.page <= 1}
           >
             Prev
           </button>
           <span style={{ fontSize: 13, opacity: 0.8 }}>Page {query.page}</span>
-          <button className="secondary-btn" onClick={() => setUrlQuery({ page: query.page + 1 })} disabled={isLoading || !hasNext}>
+          <button className="secondary-btn secondary-btn--sm" onClick={() => setUrlQuery({ page: query.page + 1 })} disabled={isLoading || !hasNext}>
             Next
           </button>
         </div>
       </div>
 
-      {error ? (
-        <div className="auth-form-error" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <span>{error}</span>
-          <button className="secondary-btn" onClick={() => setUrlQuery({ page: query.page })} disabled={isLoading}>
-            Retry
-          </button>
-        </div>
-      ) : null}
+      <FormError
+        message={error ?? undefined}
+        action={
+          error ? (
+            <button className="secondary-btn" onClick={() => setUrlQuery({ page: query.page })} disabled={isLoading}>
+              Retry
+            </button>
+          ) : null
+        }
+      />
 
       {isLoading ? (
-        <p style={{ marginTop: 12 }}>Loading...</p>
-      ) : rows.length === 0 ? (
-        <p style={{ marginTop: 12, opacity: 0.8 }}>Tidak ada user yang cocok.</p>
+        <UsersTableSkeleton />
+      ) : filteredRows.length === 0 ? (
+        <div style={{ marginTop: 12 }}>
+          <EmptyState
+            title="Tidak ada user"
+            description={query.q ? "Coba ubah kata kunci pencarian." : "Belum ada user yang cocok."}
+            action={
+              query.q ? (
+                <button className="secondary-btn" onClick={() => setUrlQuery({ q: "", page: 1 })}>
+                  Reset filter
+                </button>
+              ) : null
+            }
+          />
+        </div>
       ) : (
         <div className="table-container" style={{ marginTop: 12 }}>
           <table>
@@ -392,7 +587,7 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
               </tr>
             </thead>
             <tbody>
-              {rows.map((u) => (
+              {filteredRows.map((u) => (
                 <tr key={u.id}>
                   <td>
                     <input
@@ -403,13 +598,18 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
                       disabled={isBulkApplying}
                     />
                   </td>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
+                  <td>
+                    <div className="btn-row" style={{ gap: 8 }}>
+                      <span>{u.name}</span>
+                      {u.isAdmin ? <span className="badge badge--info">Admin</span> : null}
+                    </div>
+                  </td>
+                  <td className="text-truncate" style={{ maxWidth: 320 }}>{u.email}</td>
                   <td>
                     {editingUserId === u.id ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div className="stack-sm">
                         {roles.map((r) => (
-                          <label key={r.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <label key={r.id} className="check-row">
                             <input
                               type="checkbox"
                               checked={Boolean(roleSelection[r.id])}
@@ -421,22 +621,35 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
                         ))}
                       </div>
                     ) : (
-                      roleNames(u.roles)
+                      <div className="btn-row" style={{ gap: 6 }}>
+                        {Array.isArray(u.roles) && u.roles.length ? (
+                          u.roles.slice(0, 3).map((r) => (
+                            <span key={r.id} className="badge badge--info">
+                              {r.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span style={{ opacity: 0.75 }}>-</span>
+                        )}
+                        {Array.isArray(u.roles) && u.roles.length > 3 ? (
+                          <span className="badge badge--info">+{u.roles.length - 3}</span>
+                        ) : null}
+                      </div>
                     )}
                   </td>
                   <td>{new Date(u.createdAt).toLocaleString()}</td>
                   <td>
                     {editingUserId === u.id ? (
-                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <div className="btn-row">
                         <button className="primary-btn" onClick={() => saveRoles(u.id)} disabled={isSavingUserRoles}>
                           {isSavingUserRoles ? "Saving..." : "Save"}
                         </button>
-                        <button className="secondary-btn" onClick={cancelEdit} disabled={isSavingUserRoles}>
+                        <button className="secondary-btn secondary-btn--sm" onClick={cancelEdit} disabled={isSavingUserRoles}>
                           Cancel
                         </button>
                       </div>
                     ) : (
-                      <button className="secondary-btn" onClick={() => startEdit(u)}>
+                      <button className="secondary-btn secondary-btn--sm" onClick={() => startEdit(u)}>
                         Edit Roles
                       </button>
                     )}
@@ -447,6 +660,27 @@ export default function UsersClient({ initial }: { initial: AdminUsersInitialDat
           </table>
         </div>
       )}
+
+      {bulkUndo ? (
+        <div role="status" aria-live="polite" className="bottom-toast">
+          <div className="bottom-toast__card">
+            <span style={{ fontSize: 13, opacity: 0.95 }}>{bulkUndo.message}</span>
+            <div className="btn-row">
+              <button
+                className="secondary-btn secondary-btn--sm"
+                onClick={() => void bulkUndoApply()}
+                disabled={isBulkApplying || isBulkUndoing}
+                title="Undo bulk role update"
+              >
+                {isBulkUndoing ? "Undoing..." : "Undo"}
+              </button>
+              <button className="secondary-btn secondary-btn--sm" onClick={() => setBulkUndo(null)} disabled={isBulkUndoing}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

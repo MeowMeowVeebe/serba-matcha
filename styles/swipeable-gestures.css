@@ -1,0 +1,137 @@
+/* Swipeable Cards & Mobile Gestures */
+.swipeable-card {
+  position: relative;
+  touch-action: pan-y;
+  user-select: none;
+  will-change: transform;
+}
+
+.swipeable-card--dragging {
+  cursor: grabbing;
+}
+
+.swipe-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  opacity: 0.8;
+}
+
+.swipe-indicator--left { left: 10px; }
+.swipe-indicator--right { right: 10px; }
+
+/* Card Stack */
+.card-stack {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  perspective: 1000px;
+}
+
+.card-stack__card {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.card-stack__card--exit-left {
+  animation: cardExitLeft 0.3s forwards;
+}
+
+.card-stack__card--exit-right {
+  animation: cardExitRight 0.3s forwards;
+}
+
+@keyframes cardExitLeft {
+  to {
+    transform: translateX(-150%) rotate(-20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes cardExitRight {
+  to {
+    transform: translateX(150%) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+.card-stack__counter {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+/* Pull to Refresh */
+.pull-to-refresh {
+  position: relative;
+  overflow: hidden;
+}
+
+.pull-to-refresh__indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--color-bg-elevated);
+  overflow: hidden;
+  transition: height 0.2s;
+}
+
+.pull-to-refresh__spinner {
+  font-size: 1.5rem;
+  transition: transform 0.1s;
+}
+
+.pull-to-refresh__spinner--active {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.pull-to-refresh__content {
+  transition: transform 0.2s;
+}
+
+/* Pinch Zoom */
+.pinch-zoom {
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.pinch-zoom__content {
+  transform-origin: center center;
+}
+
+.pinch-zoom__reset {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}

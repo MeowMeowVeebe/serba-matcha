@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useAlert } from "@/context/AlertContext";
+import { TextField } from "@/components/form/TextField";
+import FormError from "@/components/form/FormError";
+import PrimaryButton from "@/components/form/PrimaryButton";
+import AuthShell from "@/components/AuthShell";
 
 function isValidEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
@@ -10,21 +14,22 @@ function isValidEmail(v: string) {
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; form?: string }>({});
   const { showAlert } = useAlert();
 
-  const canSubmit = useMemo(
-    () => Boolean(email.trim()) && !isSubmitting,
-    [email, isSubmitting]
-  );
+  const canSubmit = useMemo(() => Boolean(email.trim()) && !isSubmitting, [email, isSubmitting]);
+
+  const emailRef = useRef<HTMLInputElement | null>(null);
 
   const validate = () => {
     const next: typeof errors = {};
     if (!email.trim()) next.email = "Email wajib diisi.";
     else if (!isValidEmail(email)) next.email = "Format email tidak valid.";
     setErrors(next);
+
+    if (next.email) emailRef.current?.focus();
+
     return Object.keys(next).length === 0;
   };
 
@@ -47,16 +52,18 @@ export default function ForgotPasswordPage() {
         | null;
 
       if (!res.ok) {
-        setErrors({ form: data?.message ?? "Gagal memproses permintaan." });
+        const msg = data?.message ?? "Gagal memproses permintaan.";
+        setErrors({ form: msg });
+        showAlert(msg, { variant: "error" });
         return;
       }
 
-      showAlert(data?.message ?? "Permintaan diproses.");
+      showAlert(data?.message ?? "Permintaan diproses.", { variant: "success" });
       setStep(2);
 
       // Dev helper: tampilkan link reset kalau server mengembalikannya.
       if (data?.resetUrl) {
-        showAlert(`Dev reset link: ${data.resetUrl}`);
+        showAlert(`Dev reset link: ${data.resetUrl}`, { variant: "info", durationMs: 7000 });
       }
 
       setEmail("");
@@ -66,80 +73,44 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="auth-container">
-      <section className="auth-card" aria-label="Forgot Password">
-        <aside className="auth-aside" aria-hidden>
-          <div className="auth-brand">
-            <div className="auth-logo">M</div>
-            <div>
-            </div>
-          </div>
-         
-        </aside>
+    <AuthShell
+      ariaLabel="Forgot Password"
+      headerTitle="Lupa Password"
+      headerDescription="Masukkan email aktif. Kami kirim tautan reset."
+      asideTitle="Serba Matcha"
+      asideDescription="Pulihkan akses akun tanpa hambatan."
+      asideBenefits={["Link reset sekali pakai", "Kedaluwarsa otomatis", "Keamanan terjaga"]}
+    >
+      <form onSubmit={handleSubmit} className="auth-fields">
+        <TextField
+          ref={emailRef}
+          id="email"
+          label="Email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="nama@domain.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
+        />
 
-        <div className="auth-form">
-          <header className="auth-header">
-            <h2>Lupa Password</h2>
-            <p>Masukkan email kamu. Kami kirim instruksi reset.</p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }} aria-label="Progress">
-              {([1, 2, 3] as const).map((s) => (
-                <span
-                  key={s}
-                  style={{
-                    fontSize: 12,
-                    padding: "4px 10px",
-                    borderRadius: 999,
-                    border: "1px solid rgba(0,0,0,0.12)",
-                    background: step === s ? "rgba(0,0,0,0.08)" : "transparent",
-                  }}
-                >
-                  {s === 1 ? "Request" : s === 2 ? "Check inbox" : "Reset"}
-                </span>
-              ))}
-            </div>
-          </header>
+        <FormError message={errors.form} />
 
-          <form onSubmit={handleSubmit} className="auth-fields">
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="nama@domain.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                aria-invalid={Boolean(errors.email)}
-              />
-              {errors.email ? <p className="auth-error">{errors.email}</p> : null}
-            </div>
+        <PrimaryButton type="submit" disabled={!canSubmit} isLoading={isSubmitting}>
+          Kirim Instruksi
+        </PrimaryButton>
 
-            {errors.form ? <div className="auth-form-error">{errors.form}</div> : null}
-
-            <button type="submit" className="auth-primary-btn" disabled={!canSubmit}>
-              {isSubmitting ? (
-                <span className="auth-btn-row">
-                  <span className="auth-spinner" aria-hidden />
-                  Memproses...
-                </span>
-              ) : (
-                "Kirim Instruksi"
-              )}
-            </button>
-
-            <div className="auth-divider">
-              <span />
-              <p>Kembali</p>
-              <span />
-            </div>
-
-            <Link href="/login" className="auth-secondary-link">
-              Ke halaman Login
-            </Link>
-          </form>
+        <div className="auth-divider">
+          <span />
+          <p>Kembali</p>
+          <span />
         </div>
-      </section>
-    </main>
+
+        <Link href="/login" className="auth-secondary-link">
+          Ke halaman Login
+        </Link>
+      </form>
+    </AuthShell>
   );
 }

@@ -1,0 +1,178 @@
+/* Animated Counter */
+.animated-counter {
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.animated-counter__int {
+  font-weight: inherit;
+}
+
+.animated-counter__dec {
+  font-size: 0.75em;
+  opacity: 0.8;
+}
+
+/* Animated Ring */
+.animated-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.animated-ring__svg {
+  transform: rotate(-90deg);
+}
+
+.animated-ring__bg {
+  opacity: 0.2;
+}
+
+.animated-ring__progress {
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.animated-ring__value {
+  position: absolute;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Animated Line Chart */
+.animated-line-chart {
+  overflow: visible;
+}
+
+.animated-line-chart__line {
+  filter: drop-shadow(0 2px 4px rgba(127, 183, 131, 0.3));
+}
+
+.animated-line-chart__dot {
+  cursor: pointer;
+  transition: r 0.2s;
+}
+
+.animated-line-chart__dot:hover {
+  filter: brightness(1.2);
+}
+
+.animated-line-chart__area {
+  opacity: 0.6;
+}
+
+.animated-line-chart__tooltip rect {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Animated Bar Chart */
+.animated-bar-chart__bar {
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
+.animated-bar-chart__bar:hover {
+  opacity: 0.8;
+  filter: brightness(1.1);
+}
+
+/* Pulse Animation for Real-time Data */
+@keyframes dataPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(127, 183, 131, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(127, 183, 131, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(127, 183, 131, 0);
+  }
+}
+
+.data-pulse {
+  animation: dataPulse 2s infinite;
+}
+
+/* Live Indicator */
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-success);
+}
+
+.live-indicator::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: liveBlink 1.5s infinite;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Chart Container */
+.chart-container {
+  position: relative;
+  width: 100%;
+  padding: 1rem;
+  background: var(--color-bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.chart-container__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.chart-container__title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.chart-container__legend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+}
+
+.chart-container__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.chart-container__legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* Morphing Transition Between Charts */
+.chart-morph {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart-morph--entering {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.chart-morph--entered {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.chart-morph--exiting {
+  opacity: 0;
+  transform: scale(1.05);
+}
