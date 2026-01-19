@@ -159,7 +159,7 @@ export function DraggableWidgets() {
           />
         )}
         {widget.type === "chart" && (
-          <Card variant="bordered" style={{ height: "100%" }}>
+          <Card variant="bordered">
             <CardHeader title={widget.title} />
             <CardBody>
               <LineChart
@@ -179,7 +179,7 @@ export function DraggableWidgets() {
           </Card>
         )}
         {widget.type === "activity" && (
-          <Card variant="bordered" style={{ height: "100%" }}>
+          <Card variant="bordered">
             <CardHeader title={widget.title} />
             <CardBody>
               <div style={{ fontSize: "0.875rem" }}>
@@ -292,9 +292,9 @@ export function DraggableWidgets() {
                 onChange={importLayout}
                 style={{ display: "none" }}
               />
-              <Button variant="secondary" size="sm" as="span">
+              <span className="secondary-btn secondary-btn--sm">
                 📂 Import Layout
-              </Button>
+              </span>
             </label>
           </>
         )}
@@ -399,3 +399,4 @@ export function DraggableWidgets() {
     </div>
   );
 }
+

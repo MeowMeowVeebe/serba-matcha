@@ -60,6 +60,7 @@ async function maybeCleanupOldAuditLogs() {
 /**
  * Best-effort audit log.
  * Supports sampling via AUDIT_SAMPLE_RATE to reduce write load on high-traffic routes.
+ * Now NON-BLOCKING by default for better performance.
  */
 export async function logAudit(params: {
   action: string;
@@ -68,6 +69,8 @@ export async function logAudit(params: {
   meta?: Record<string, unknown>;
   /** Override sampling for specific events. Defaults to true. */
   sampled?: boolean;
+  /** If true, wait for the log to complete. Default false for non-blocking. */
+  blocking?: boolean;
 }) {
   const shouldSample = params.sampled !== false;
   if (shouldSample) {
@@ -76,35 +79,46 @@ export async function logAudit(params: {
     if (rate < 1 && Math.random() > rate) return;
   }
 
-  // best-effort cleanup (probabilistic)
-  await maybeCleanupOldAuditLogs();
+  const doLog = async () => {
+    // best-effort cleanup (probabilistic) - very low probability
+    if (Math.random() < 0.001) {
+      maybeCleanupOldAuditLogs().catch(() => {});
+    }
 
-  const metaObj = params.meta ?? undefined;
-  const metaJson = metaObj ? JSON.stringify(metaObj) : "";
+    const metaObj = params.meta ?? undefined;
+    const metaJson = metaObj ? JSON.stringify(metaObj) : "";
 
-  // Materialize common fields for faster search/filter.
-  const targetUserId = metaObj ? pickString(metaObj, "targetUserId") ?? pickString(metaObj, "userId") : null;
-  const targetEmail = metaObj ? pickString(metaObj, "targetEmail") ?? pickString(metaObj, "email") : null;
-  const resource = metaObj ? pickString(metaObj, "resource") ?? pickString(metaObj, "path") ?? pickString(metaObj, "route") : null;
-  const statusCode = metaObj ? pickNumber(metaObj, "statusCode") ?? pickNumber(metaObj, "status") : null;
-  const metaPreview = metaJson ? buildMetaPreview(metaJson) : null;
+    // Materialize common fields for faster search/filter.
+    const targetUserId = metaObj ? pickString(metaObj, "targetUserId") ?? pickString(metaObj, "userId") : null;
+    const targetEmail = metaObj ? pickString(metaObj, "targetEmail") ?? pickString(metaObj, "email") : null;
+    const resource = metaObj ? pickString(metaObj, "resource") ?? pickString(metaObj, "path") ?? pickString(metaObj, "route") : null;
+    const statusCode = metaObj ? pickNumber(metaObj, "statusCode") ?? pickNumber(metaObj, "status") : null;
+    const metaPreview = metaJson ? buildMetaPreview(metaJson) : null;
 
-  try {
-    await prisma.auditLog.create({
-      data: {
-        action: params.action,
-        userId: params.userId,
-        ip: params.ip,
-        targetUserId,
-        targetEmail,
-        resource,
-        statusCode,
-        meta: metaJson || undefined,
-        metaPreview: metaPreview || undefined,
-      },
-    });
-  } catch {
-    // best-effort only
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: params.action,
+          userId: params.userId,
+          ip: params.ip,
+          targetUserId,
+          targetEmail,
+          resource,
+          statusCode,
+          meta: metaJson || undefined,
+          metaPreview: metaPreview || undefined,
+        },
+      });
+    } catch {
+      // best-effort only
+    }
+  };
+
+  // Non-blocking by default - fire and forget
+  if (params.blocking) {
+    await doLog();
+  } else {
+    doLog().catch(() => {});
   }
 }
 

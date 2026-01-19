@@ -11,9 +11,9 @@ export async function GET(request: Request) {
 
     // Check if user has admin role
     const user = await prisma.user.findUnique({
-      where: { id: session.userId },
+      where: { id: session.sub },
       include: {
-        userRoles: {
+        roles: {
           include: {
             role: true,
           },
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       },
     });
 
-    const isAdmin = user?.userRoles.some((ur) => ur.role.name === "admin");
+    const isAdmin = user?.roles.some((ur) => ur.role.name === "admin");
     if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -32,33 +32,19 @@ export async function GET(request: Request) {
 
     // Get recent audit logs
     const recentActivity = await prisma.auditLog.findMany({
-      orderBy: { timestamp: "desc" },
+      orderBy: { createdAt: "desc" },
       take: limit,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-      },
     });
 
     return NextResponse.json({
       activities: recentActivity.map((log) => ({
         id: log.id,
         action: log.action,
-        status: log.status,
-        timestamp: log.timestamp.toISOString(),
-        user: log.user
-          ? {
-              id: log.user.id,
-              email: log.user.email,
-              name: log.user.name,
-            }
-          : null,
-        metadata: log.metadata,
+        statusCode: log.statusCode,
+        createdAt: log.createdAt.toISOString(),
+        userId: log.userId,
+        ip: log.ip,
+        meta: log.metaPreview,
       })),
     });
   } catch (error) {

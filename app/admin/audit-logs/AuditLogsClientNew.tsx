@@ -43,11 +43,11 @@ export default function AuditLogsClientNew() {
           }))
         );
       } else {
-        showAlert("Failed to fetch audit logs", "error");
+        showAlert("Failed to fetch audit logs", { variant: "error" });
       }
     } catch (error) {
       console.error("Error fetching logs:", error);
-      showAlert("An error occurred while fetching logs", "error");
+      showAlert("An error occurred while fetching logs", { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -65,13 +65,13 @@ export default function AuditLogsClientNew() {
       });
 
       if (response.ok) {
-        showAlert("Export job created successfully", "success");
+        showAlert("Export job created successfully", { variant: "success" });
       } else {
-        showAlert("Failed to create export job", "error");
+        showAlert("Failed to create export job", { variant: "error" });
       }
     } catch (error) {
       console.error("Error creating export:", error);
-      showAlert("An error occurred while creating export", "error");
+      showAlert("An error occurred while creating export", { variant: "error" });
     }
   };
 

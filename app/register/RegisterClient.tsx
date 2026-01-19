@@ -75,7 +75,7 @@ export default function RegisterClient() {
   };
 
   return (
-    <AuthShell title="Create Account" subtitle="Sign up to get started">
+    <AuthShell ariaLabel="Register" headerTitle="Create Account" headerDescription="Sign up to get started">
       <Card variant="elevated" padding="lg">
         <CardBody>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -104,7 +104,7 @@ export default function RegisterClient() {
               }}
               error={errors.name}
               required
-              autoComplete="name"
+              autoComplete="off"
             />
 
             <Input
@@ -118,7 +118,7 @@ export default function RegisterClient() {
               }}
               error={errors.email}
               required
-              autoComplete="email"
+              autoComplete="off"
             />
 
             <Input
@@ -133,7 +133,7 @@ export default function RegisterClient() {
               error={errors.password}
               helperText="Must be at least 8 characters"
               required
-              autoComplete="new-password"
+              autoComplete="off"
             />
             <PasswordStoryline password={password} />
 
@@ -148,7 +148,7 @@ export default function RegisterClient() {
               }}
               error={errors.confirmPassword}
               required
-              autoComplete="new-password"
+              autoComplete="off"
             />
 
             <Button type="submit" variant="primary" fullWidth isLoading={isLoading} loadingText="Creating account...">

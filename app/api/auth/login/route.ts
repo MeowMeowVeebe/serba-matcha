@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { findUserByEmail } from "@/lib/server/userStore";
-import { verifyPassword } from "@/lib/server/password";
+import { verifyPasswordAsync } from "@/lib/server/password";
 import { ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS } from "@/lib/server/authConfig";
 import { signToken } from "@/lib/server/token";
 import { setAccessCookie, setRefreshCookie } from "@/lib/server/authCookies";
-import { createRefreshToken, cleanupRefreshTokens } from "@/lib/server/refreshTokens";
+import { createRefreshToken } from "@/lib/server/refreshTokens";
 import { checkRateLimit, getClientIp, tooManyRequests } from "@/lib/server/rateLimit";
 import { logAudit } from "@/lib/server/auditLog";
 
@@ -13,12 +13,15 @@ import { withServerTiming } from "@/lib/server/observability";
 export async function POST(req: Request) {
   return withServerTiming("auth.login", async () => {
   const ip = getClientIp(req);
+  
+  // Rate limit check - fast path
   const rl = await checkRateLimit({
     key: `login:${ip}`,
     rule: { windowMs: 60_000, max: 10 },
   });
   if (!rl.ok) {
-    await logAudit({ action: "auth.login.rate_limited", ip });
+    // Non-blocking audit log
+    logAudit({ action: "auth.login.rate_limited", ip });
     return tooManyRequests(rl.retryAfterSeconds);
   }
 
@@ -36,26 +39,30 @@ export async function POST(req: Request) {
 
     const user = await findUserByEmail(email);
     if (!user) {
-      await logAudit({ action: "auth.login.failed", ip, meta: { email } });
+      // Non-blocking audit log
+      logAudit({ action: "auth.login.failed", ip, meta: { email } });
       return NextResponse.json({ message: "Email atau password salah." }, { status: 401 });
     }
 
-    if (!verifyPassword(password, user.password)) {
-      await logAudit({ action: "auth.login.failed", userId: user.id, ip, meta: { email } });
+    // Use async password verification for non-blocking
+    const passwordValid = await verifyPasswordAsync(password, user.password);
+    if (!passwordValid) {
+      // Non-blocking audit log
+      logAudit({ action: "auth.login.failed", userId: user.id, ip, meta: { email } });
       return NextResponse.json({ message: "Email atau password salah." }, { status: 401 });
     }
 
-    await cleanupRefreshTokens();
-
+    // Generate tokens in parallel - no need to wait for cleanup
     const now = Math.floor(Date.now() / 1000);
-    const accessToken = signToken({
-      sub: user.id,
-      email: user.email,
-      iat: now,
-      exp: now + ACCESS_TOKEN_TTL_SECONDS,
-    });
-
-    const refresh = await createRefreshToken(user.id);
+    const [accessToken, refresh] = await Promise.all([
+      Promise.resolve(signToken({
+        sub: user.id,
+        email: user.email,
+        iat: now,
+        exp: now + ACCESS_TOKEN_TTL_SECONDS,
+      })),
+      createRefreshToken(user.id),
+    ]);
 
     const res = NextResponse.json({
       message: "Login berhasil.",
@@ -65,7 +72,8 @@ export async function POST(req: Request) {
     setAccessCookie(res, accessToken, ACCESS_TOKEN_TTL_SECONDS);
     setRefreshCookie(res, refresh.token, REFRESH_TOKEN_TTL_SECONDS);
 
-    await logAudit({ action: "auth.login.success", userId: user.id, ip });
+    // Non-blocking audit log
+    logAudit({ action: "auth.login.success", userId: user.id, ip });
     return res;
   } catch {
     return NextResponse.json({ message: "Request tidak valid." }, { status: 400 });

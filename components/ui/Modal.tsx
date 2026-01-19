@@ -144,6 +144,9 @@ export function ConfirmModal({
     onConfirm();
   };
 
+  // Map modal variant to button variant
+  const buttonVariant = variant === "danger" ? "danger" : "primary";
+
   return (
     <Modal
       isOpen={isOpen}
@@ -155,7 +158,7 @@ export function ConfirmModal({
           <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             {cancelText}
           </Button>
-          <Button variant={variant} onClick={handleConfirm} isLoading={isLoading}>
+          <Button variant={buttonVariant} onClick={handleConfirm} isLoading={isLoading}>
             {confirmText}
           </Button>
         </div>

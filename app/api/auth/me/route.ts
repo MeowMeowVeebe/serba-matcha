@@ -21,6 +21,9 @@ export async function GET(req: Request) {
         id: user.id,
         email: user.email,
         name: user.name,
+        phone: user.phone,
+        avatar: user.avatar,
+        roles: user.roles,
       },
     });
   });

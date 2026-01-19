@@ -23,7 +23,7 @@ export function AnimatedCounter({
 }: AnimatedCounterProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const previousValue = useRef(0);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   const easingFunctions = {
     linear: (t: number) => t,

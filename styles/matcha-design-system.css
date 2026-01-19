@@ -1,0 +1,935 @@
+/* ============================================
+   MATCHA DESIGN SYSTEM
+   Modern, Clean, Consistent UI Components
+   ============================================ */
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+  /* Brand Colors - Matcha Theme */
+  --matcha-50: #f0fdf4;
+  --matcha-100: #dcfce7;
+  --matcha-200: #bbf7d0;
+  --matcha-300: #86efac;
+  --matcha-400: #4ade80;
+  --matcha-500: #22c55e;
+  --matcha-600: #16a34a;
+  --matcha-700: #15803d;
+  --matcha-800: #166534;
+  --matcha-900: #14532d;
+
+  /* Neutral Colors */
+  --neutral-50: #fafafa;
+  --neutral-100: #f4f4f5;
+  --neutral-200: #e4e4e7;
+  --neutral-300: #d4d4d8;
+  --neutral-400: #a1a1aa;
+  --neutral-500: #71717a;
+  --neutral-600: #52525b;
+  --neutral-700: #3f3f46;
+  --neutral-800: #27272a;
+  --neutral-900: #18181b;
+
+  /* Semantic Colors */
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.1);
+  --warning: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.1);
+  --danger: #ef4444;
+  --danger-light: rgba(239, 68, 68, 0.1);
+  --info: #3b82f6;
+  --info-light: rgba(59, 130, 246, 0.1);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(34, 197, 94, 0.3);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Mode Variables */
+body.dark {
+  --card-bg: #1f2937;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --input-bg: #374151;
+  --input-border: #4b5563;
+  --hover-bg: rgba(255, 255, 255, 0.05);
+}
+
+body:not(.dark) {
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --input-bg: #f9fafb;
+  --input-border: #e5e7eb;
+  --hover-bg: rgba(0, 0, 0, 0.03);
+}
+
+/* ============================================
+   MODERN CARD COMPONENT
+   ============================================ */
+.matcha-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.matcha-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.matcha-card--interactive {
+  cursor: pointer;
+}
+
+.matcha-card--interactive:hover {
+  border-color: var(--matcha-400);
+}
+
+.matcha-card--glow:hover {
+  box-shadow: var(--shadow-glow);
+}
+
+.matcha-card__header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--card-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.matcha-card__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.matcha-card__header-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--matcha-500);
+}
+
+.matcha-card__body {
+  padding: var(--space-6);
+}
+
+.matcha-card__footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--card-border);
+  background: var(--hover-bg);
+}
+
+/* ============================================
+   STAT CARD COMPONENT
+   ============================================ */
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--matcha-400), var(--matcha-600));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-4);
+  background: var(--matcha-100);
+  color: var(--matcha-600);
+}
+
+body.dark .stat-card__icon {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--matcha-400);
+}
+
+.stat-card__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.stat-card__label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.stat-card__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: var(--space-2);
+}
+
+.stat-card__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.stat-card__trend--up {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.stat-card__trend--down {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.stat-card__trend--neutral {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+/* ============================================
+   PROGRESS RING COMPONENT
+   ============================================ */
+.progress-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-ring__circle {
+  transform: rotate(-90deg);
+}
+
+.progress-ring__bg {
+  stroke: var(--neutral-200);
+}
+
+body.dark .progress-ring__bg {
+  stroke: var(--neutral-700);
+}
+
+.progress-ring__progress {
+  stroke: var(--matcha-500);
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--transition-slow);
+}
+
+.progress-ring__text {
+  position: absolute;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   ACTIVITY TIMELINE
+   ============================================ */
+.activity-timeline {
+  position: relative;
+  padding-left: var(--space-8);
+}
+
+.activity-timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--matcha-400), var(--matcha-200), transparent);
+  border-radius: 2px;
+}
+
+.activity-item {
+  position: relative;
+  padding-bottom: var(--space-5);
+}
+
+.activity-item:last-child {
+  padding-bottom: 0;
+}
+
+.activity-item__dot {
+  position: absolute;
+  left: -27px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--matcha-500);
+  border: 3px solid var(--card-bg);
+  box-shadow: 0 0 0 2px var(--matcha-200);
+}
+
+.activity-item__content {
+  background: var(--hover-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.activity-item__title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.activity-item__time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   DATA TABLE
+   ============================================ */
+.matcha-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.matcha-table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: var(--hover-bg);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.matcha-table th:first-child {
+  border-radius: var(--radius-md) 0 0 0;
+}
+
+.matcha-table th:last-child {
+  border-radius: 0 var(--radius-md) 0 0;
+}
+
+.matcha-table td {
+  padding: var(--space-4);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--card-border);
+  transition: background var(--transition-fast);
+}
+
+.matcha-table tbody tr:hover td {
+  background: var(--hover-bg);
+}
+
+.matcha-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+.matcha-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  text-transform: capitalize;
+}
+
+.matcha-badge--success {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.matcha-badge--warning {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.matcha-badge--danger {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.matcha-badge--info {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.matcha-badge--neutral {
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+}
+
+.matcha-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.matcha-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.matcha-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.matcha-btn--primary {
+  background: linear-gradient(135deg, var(--matcha-500) 0%, var(--matcha-600) 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.matcha-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+.matcha-btn--secondary {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+}
+
+.matcha-btn--secondary:hover:not(:disabled) {
+  background: var(--card-border);
+}
+
+.matcha-btn--danger {
+  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.matcha-btn--danger:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.matcha-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.matcha-btn--ghost:hover:not(:disabled) {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.matcha-btn--sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8rem;
+}
+
+.matcha-btn--lg {
+  padding: var(--space-4) var(--space-6);
+  font-size: 1rem;
+}
+
+/* ============================================
+   INPUTS
+   ============================================ */
+.matcha-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.matcha-input:focus {
+  outline: none;
+  border-color: var(--matcha-400);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.matcha-input::placeholder {
+  color: var(--text-muted);
+}
+
+.matcha-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.matcha-input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.matcha-input-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   TOGGLE SWITCH
+   ============================================ */
+.matcha-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.matcha-toggle__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.matcha-toggle__track {
+  width: 44px;
+  height: 24px;
+  background: var(--neutral-300);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+body.dark .matcha-toggle__track {
+  background: var(--neutral-600);
+}
+
+.matcha-toggle__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.matcha-toggle__input:checked + .matcha-toggle__track {
+  background: var(--matcha-500);
+}
+
+.matcha-toggle__input:checked + .matcha-toggle__track .matcha-toggle__thumb {
+  transform: translateX(20px);
+}
+
+.matcha-toggle__label {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+.matcha-tabs {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--hover-bg);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+}
+
+.matcha-tab {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.matcha-tab:hover {
+  color: var(--text-primary);
+}
+
+.matcha-tab--active {
+  background: var(--card-bg);
+  color: var(--matcha-600);
+  box-shadow: var(--shadow-sm);
+}
+
+body.dark .matcha-tab--active {
+  color: var(--matcha-400);
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+.matcha-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+}
+
+.matcha-empty__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: var(--matcha-100);
+  color: var(--matcha-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-4);
+}
+
+body.dark .matcha-empty__icon {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.matcha-empty__icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.matcha-empty__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.matcha-empty__text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  max-width: 300px;
+  margin-bottom: var(--space-5);
+}
+
+/* ============================================
+   GRID LAYOUTS
+   ============================================ */
+.matcha-grid {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.matcha-grid--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.matcha-grid--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.matcha-grid--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.matcha-grid--auto {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .matcha-grid--2,
+  .matcha-grid--3,
+  .matcha-grid--4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .matcha-grid--4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================
+   SECTION HEADERS
+   ============================================ */
+.matcha-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+}
+
+.matcha-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.matcha-section-title svg {
+  width: 20px;
+  height: 20px;
+  color: var(--matcha-500);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* Stagger animation delays */
+.animate-delay-1 { animation-delay: 0.1s; }
+.animate-delay-2 { animation-delay: 0.2s; }
+.animate-delay-3 { animation-delay: 0.3s; }
+.animate-delay-4 { animation-delay: 0.4s; }
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+.matcha-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neutral-300) transparent;
+}
+
+.matcha-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.matcha-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.matcha-scroll::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 3px;
+}
+
+body.dark .matcha-scroll {
+  scrollbar-color: var(--neutral-600) transparent;
+}
+
+body.dark .matcha-scroll::-webkit-scrollbar-thumb {
+  background: var(--neutral-600);
+}
+
+/* ============================================
+   QUICK ACTIONS PANEL
+   ============================================ */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background: var(--hover-bg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.quick-action:hover {
+  background: var(--card-bg);
+  border-color: var(--matcha-400);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.quick-action__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--matcha-100);
+  color: var(--matcha-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.dark .quick-action__icon {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--matcha-400);
+}
+
+.quick-action__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.quick-action__label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+/* ============================================
+   SECURITY SCORE WIDGET
+   ============================================ */
+.security-score {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  background: linear-gradient(135deg, var(--matcha-500) 0%, var(--matcha-700) 100%);
+  border-radius: var(--radius-lg);
+  color: white;
+}
+
+.security-score__ring {
+  flex-shrink: 0;
+}
+
+.security-score__info h4 {
+  margin: 0 0 var(--space-2) 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.security-score__info p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.security-score__actions {
+  margin-top: var(--space-4);
+}
+
+.security-score__btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.security-score__btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

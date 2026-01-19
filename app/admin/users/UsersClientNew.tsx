@@ -43,11 +43,11 @@ export default function UsersClientNew() {
           }))
         );
       } else {
-        showAlert("Failed to fetch users", "error");
+        showAlert("Failed to fetch users", { variant: "error" });
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-      showAlert("An error occurred while fetching users", "error");
+      showAlert("An error occurred while fetching users", { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -69,14 +69,14 @@ export default function UsersClientNew() {
 
       const allSuccess = results.every((r) => r.ok);
       if (allSuccess) {
-        showAlert("Users deleted successfully", "success");
+        showAlert("Users deleted successfully", { variant: "success" });
         fetchUsers();
       } else {
-        showAlert("Some users could not be deleted", "error");
+        showAlert("Some users could not be deleted", { variant: "error" });
       }
     } catch (error) {
       console.error("Error deleting users:", error);
-      showAlert("An error occurred while deleting users", "error");
+      showAlert("An error occurred while deleting users", { variant: "error" });
     }
   };
 

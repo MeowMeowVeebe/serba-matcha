@@ -31,6 +31,42 @@ function uid() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
+// Modern toast stack styles
+const stackStyles = `
+  .toast-stack {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+    max-height: calc(100vh - 40px);
+    overflow: hidden;
+  }
+
+  .toast-stack > * {
+    pointer-events: auto;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 480px) {
+    .toast-stack {
+      top: auto;
+      bottom: 20px;
+      right: 12px;
+      left: 12px;
+    }
+
+    .toast-stack .toast-notification {
+      min-width: 0;
+      max-width: none;
+      width: 100%;
+    }
+  }
+`;
+
 export const AlertProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -42,7 +78,7 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
 
     setToasts((prev) => {
       const next = [toast, ...prev];
-      // avoid huge stacks
+      // avoid huge stacks - max 5 toasts
       return next.slice(0, 5);
     });
   }, []);
@@ -52,7 +88,8 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AlertContext.Provider value={value}>
       {children}
-      <div className="global-alert-stack" aria-label="Notifications">
+      <style>{stackStyles}</style>
+      <div className="toast-stack" aria-label="Notifications" role="region">
         {toasts.map((t) => (
           <GlobalAlert
             key={t.id}

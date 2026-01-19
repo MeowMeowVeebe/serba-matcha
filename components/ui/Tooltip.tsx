@@ -11,7 +11,7 @@ export type TooltipProps = {
 
 export function Tooltip({ content, position = "top", children, delay = 200 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const showTooltip = () => {
     timeoutRef.current = setTimeout(() => {

@@ -103,7 +103,7 @@ export function GlobalSearch() {
     const mockResults: SearchResult[] = [
       {
         id: "1",
-        type: "user",
+        type: "user" as const,
         title: "John Doe",
         description: "john@example.com - Admin",
         url: "/admin/users?id=1",
@@ -111,7 +111,7 @@ export function GlobalSearch() {
       },
       {
         id: "2",
-        type: "log",
+        type: "log" as const,
         title: "Login Attempt Failed",
         description: "IP: 192.168.1.1 - 2 hours ago",
         url: "/admin/audit-logs?filter=failed",
@@ -119,7 +119,7 @@ export function GlobalSearch() {
       },
       {
         id: "3",
-        type: "page",
+        type: "page" as const,
         title: "Dashboard",
         description: "View analytics and metrics",
         url: "/dashboard",
@@ -127,7 +127,7 @@ export function GlobalSearch() {
       },
       {
         id: "4",
-        type: "page",
+        type: "page" as const,
         title: "RBAC Management",
         description: "Manage roles and permissions",
         url: "/admin/rbac",
@@ -135,7 +135,7 @@ export function GlobalSearch() {
       },
       {
         id: "5",
-        type: "setting",
+        type: "setting" as const,
         title: "Profile Settings",
         description: "Update your profile information",
         url: "/settings",

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { hashPassword } from "@/lib/server/password";
+import { hashPasswordAsync } from "@/lib/server/password";
 import { createUser } from "@/lib/server/userStore";
 import { ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS } from "@/lib/server/authConfig";
 import { setAccessCookie, setRefreshCookie } from "@/lib/server/authCookies";
 import { signToken } from "@/lib/server/token";
-import { createRefreshToken, cleanupRefreshTokens } from "@/lib/server/refreshTokens";
+import { createRefreshToken } from "@/lib/server/refreshTokens";
 import { getClientIp } from "@/lib/server/rateLimit";
 import { logAudit } from "@/lib/server/auditLog";
 
@@ -39,25 +39,31 @@ export async function POST(req: Request) {
       );
     }
 
+    // Use async password hashing for non-blocking
+    const hashedPassword = await hashPasswordAsync(password);
+    
     const user = await createUser({
       email,
       name,
-      password: hashPassword(password),
+      password: hashedPassword,
     });
 
-    await logAudit({ action: "auth.register", userId: user.id, ip: getClientIp(req) });
-
-    await cleanupRefreshTokens();
-
+    const ip = getClientIp(req);
+    
+    // Generate tokens in parallel with non-blocking audit log
     const now = Math.floor(Date.now() / 1000);
-    const accessToken = signToken({
-      sub: user.id,
-      email: user.email,
-      iat: now,
-      exp: now + ACCESS_TOKEN_TTL_SECONDS,
-    });
+    const [accessToken, refresh] = await Promise.all([
+      Promise.resolve(signToken({
+        sub: user.id,
+        email: user.email,
+        iat: now,
+        exp: now + ACCESS_TOKEN_TTL_SECONDS,
+      })),
+      createRefreshToken(user.id),
+    ]);
 
-    const refresh = await createRefreshToken(user.id);
+    // Non-blocking audit log
+    logAudit({ action: "auth.register", userId: user.id, ip });
 
     const res = NextResponse.json(
       {

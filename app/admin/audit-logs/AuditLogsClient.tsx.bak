@@ -2547,10 +2547,10 @@ export default function AuditLogsClient({ initial }: { initial: AdminAuditInitia
              Close
            </button>
          </div>
-       </div>
-     </Dialog>
+        </div>
+      </Dialog>
 
-     <div className="card-header">
+      <div className="card-header">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div>
             <h3 style={{ margin: 0 }}>Daftar</h3>

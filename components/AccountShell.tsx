@@ -2,18 +2,23 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { logout, logoutAll, me, type AuthUser } from "@/lib/authClient";
+import React, { useEffect, useMemo, useState, useCallback, useRef, type ReactNode } from "react";
+import { logout, logoutAll, type AuthUser } from "@/lib/authClient";
+import { useUser } from "@/lib/hooks/useUser";
 import PageHeader from "@/components/ui/PageHeader";
 import FormError from "@/components/form/FormError";
-import ConfirmModal from "@/components/ui/ConfirmModal";
+import NavLink from "@/components/ui/NavLink";
 import { useAlert } from "@/context/AlertContext";
+import { useConfirm } from "@/components/ui/GlobalConfirmDialog";
+
+// Key for storing sidebar scroll position
+const SIDEBAR_SCROLL_KEY = "sidebar-scroll-position";
 
 export type AccountShellContext = {
   user: AuthUser | null;
   isLoadingUser: boolean;
   loadError: string | null;
-  theme: "dark";
+  theme: "dark" | "light";
 };
 
 type Props = {
@@ -34,42 +39,51 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
   const router = useRouter();
   const pathname = usePathname();
   const { showAlert } = useAlert();
+  const { confirm } = useConfirm();
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const [theme] = useState<"light" | "dark">("dark");
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
-  const [showLogoutAllConfirm, setShowLogoutAllConfirm] = useState(false);
+
+  // Use SWR for fast user data fetching with caching
+  const { user, isLoading: isLoadingUser, isError } = useUser();
+  const loadError = isError ? "Gagal memuat user." : null;
+
+  // Restore sidebar scroll position on mount
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (sidebar) {
+      const savedPosition = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+      if (savedPosition) {
+        sidebar.scrollTop = parseInt(savedPosition, 10);
+      }
+    }
+  }, []);
+
+  // Save sidebar scroll position on scroll
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    const handleScroll = () => {
+      sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(sidebar.scrollTop));
+    };
+
+    sidebar.addEventListener("scroll", handleScroll, { passive: true });
+    return () => sidebar.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     document.body.className = theme;
   }, [theme]);
 
+  // Notify parent when user loads
   useEffect(() => {
-    let mounted = true;
-
-    void (async () => {
-      setIsLoadingUser(true);
-      setLoadError(null);
-      const res = await me();
-      if (!mounted) return;
-      if (!res.ok) {
-        setLoadError(res.message ?? "Gagal memuat user.");
-        setUser(null);
-        setIsLoadingUser(false);
-        return;
-      }
-      setUser(res.user);
-      onUserLoaded?.(res.user);
-      setIsLoadingUser(false);
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [onUserLoaded, router]);
+    if (user && onUserLoaded) {
+      onUserLoaded(user);
+    }
+  }, [user, onUserLoaded]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -85,18 +99,45 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
 
   const handleLogoutAll = async () => {
     if (isLoggingOutAll) return;
+    
+    // Show confirmation dialog
+    const confirmed = await confirm({
+      title: "Logout Semua Device?",
+      message: (
+        <>
+          <p style={{ margin: "0 0 12px" }}>
+            Anda akan keluar dari <strong>semua perangkat</strong> yang sedang login, termasuk perangkat ini.
+          </p>
+          <p style={{ margin: 0, fontSize: "0.9em", opacity: 0.8 }}>
+            Semua refresh token akan dicabut. Anda perlu login kembali.
+          </p>
+        </>
+      ),
+      confirmText: "Ya, Logout Semua",
+      cancelText: "Batal",
+      variant: "danger",
+    });
+
+    if (!confirmed) return;
+
     setIsLoggingOutAll(true);
     try {
       const res = await logoutAll();
-      showAlert(res.message ?? "Logout semua device.", { variant: "warning" });
+      showAlert(res.message ?? "Logout semua device berhasil.", { variant: "success" });
     } finally {
       setIsLoggingOutAll(false);
       router.push("/login");
     }
   };
 
+  // Check if user is admin
+  const isAdmin = useMemo(() => {
+    return user?.roles?.some((role) => role.toLowerCase() === "admin") ?? false;
+  }, [user]);
+
   const navSections = useMemo(
-    () => [
+    () => {
+      const sections: { title: string; items: { href: string; label: string; icon: React.ReactNode }[] }[] = [
       {
         title: "Main",
         items: [
@@ -136,86 +177,30 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
               </svg>
             ),
           },
-          {
-            href: "/feature-lab",
-            label: "Feature Lab",
-            icon: (
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
-                <path
-                  fill="currentColor"
-                  d="M9 2h6v2h-1v5.59l4.7 4.7-1.4 1.41L12 11.41 6.7 16.7l-1.4-1.41 4.7-4.7V4H9V2z"
-                />
-              </svg>
-            ),
-          },
-          {
-            href: "/feature-spotlight",
-            label: "Feature Spotlight",
-            icon: (
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
-                <path
-                  fill="currentColor"
-                  d="m12 2 3 7 7 .6-5.3 4.6 1.6 7.8L12 18l-6.3 4 1.6-7.8L2 9.6 9 9l3-7z"
-                />
-              </svg>
-            ),
-          },
-          {
-            href: "/interaction-heatmap",
-            label: "Heatmap",
-            icon: (
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
-                <path
-                  fill="currentColor"
-                  d="M12 3a9 9 0 0 0-9 9c0 3.3 1.8 6.3 4.6 7.9l1.4-1.4A7 7 0 1 1 19 12h2a9 9 0 0 0-9-9z"
-                />
-              </svg>
-            ),
-          },
         ],
       },
-      {
-        title: "Analytics",
-        items: [
-          { href: "/insights-studio", label: "Insights Studio", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg> },
-          { href: "/usage-trends", label: "Usage Trends", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg> },
-          { href: "/engagement-pulse", label: "Engagement", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg> },
-          { href: "/customer-journeys", label: "Journeys", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg> },
-        ],
-      },
-      {
-        title: "Features",
-        items: [
-          { href: "/feature-lab", label: "Feature Lab", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M7 2v2h1v14a4 4 0 0 0 8 0V4h1V2H7zm4 14c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm2-4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg> },
-          { href: "/feature-spotlight", label: "Spotlight", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="m12 2 3 7 7 .6-5.3 4.6 1.6 7.8L12 18l-6.3 4 1.6-7.8L2 9.6 9 9l3-7z"/></svg> },
-          { href: "/experiment-control-room", label: "Experiments", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M7 2v2h1v14a4 4 0 0 0 8 0V4h1V2H7z"/></svg> },
-          { href: "/alert-studio", label: "Alerts", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg> },
-        ],
-      },
-      {
-        title: "Operations",
-        items: [
-          { href: "/ops-status-center", label: "Status Center", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> },
-          { href: "/incident-war-room", label: "Incidents", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> },
-          { href: "/action-planner", label: "Planner", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg> },
-          { href: "/ops-playbook", label: "Playbook", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg> },
-        ],
-      },
-      {
-        title: "Admin",
-        items: [
-          { href: "/admin/users", label: "Users", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"/></svg> },
-          { href: "/admin/rbac", label: "RBAC", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg> },
-          { href: "/admin/audit-logs", label: "Audit Logs", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> },
-        ],
-      },
-    ],
-    [],
+    ];
+
+      // Only show Admin section if user has admin role
+      if (isAdmin) {
+        sections.push({
+          title: "Admin",
+          items: [
+            { href: "/admin/users", label: "Users", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"/></svg> },
+            { href: "/admin/rbac", label: "RBAC", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg> },
+            { href: "/admin/audit-logs", label: "Audit Logs", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> },
+          ],
+        });
+      }
+
+      return sections;
+    },
+    [isAdmin],
   );
 
   return (
     <>
-      <div className="sidebar">
+      <div className="sidebar" ref={sidebarRef}>
         <div className="sidebar__branding">
           <h2>Serba Matcha</h2>
         </div>
@@ -236,12 +221,18 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
           <div key={sec.title} className="nav-section">
             <div className="nav-section-title">{sec.title}</div>
             {sec.items.map((n) => (
-              <Link key={n.href} className={`nav-link ${isActive(pathname, n.href) ? "active" : ""}`} href={n.href}>
+              <NavLink 
+                key={n.href} 
+                href={n.href}
+                className="nav-link"
+                activeClassName="active"
+                isActive={isActive(pathname, n.href)}
+              >
                 <span className="nav-link-row">
                   <span className="nav-icon">{n.icon}</span>
                   <span>{n.label}</span>
                 </span>
-              </Link>
+              </NavLink>
             ))}
           </div>
         ))}
@@ -263,7 +254,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
             </span>
           </button>
 
-          <button className="nav-link nav-link-btn" onClick={() => setShowLogoutAllConfirm(true)} disabled={isLoggingOutAll}>
+          <button className="nav-link nav-link-btn" onClick={handleLogoutAll} disabled={isLoggingOutAll}>
             <span className="nav-link-row">
               <span className="nav-icon" aria-hidden>
                 <svg viewBox="0 0 24 24" width="16" height="16">
@@ -279,21 +270,6 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
         </div>
       </div>
 
-      <ConfirmModal
-        open={showLogoutAllConfirm}
-        title="Logout semua device"
-        description={
-          "Aksi ini akan mengeluarkan akun kamu dari semua device (semua refresh token dicabut). Kamu perlu login ulang."
-        }
-        confirmLabel="Ya, logout semua"
-        cancelLabel="Batal"
-        confirmVariant="danger"
-        isConfirming={isLoggingOutAll}
-        onCancel={() => setShowLogoutAllConfirm(false)}
-        onConfirm={async () => {
-          await handleLogoutAll();
-        }}
-      />
 
       <div className="main">
         <div className="main-header">

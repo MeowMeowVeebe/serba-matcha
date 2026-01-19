@@ -23,7 +23,7 @@ export function AmbientBackground({
 }: AmbientBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   const colors = useMemo(() => {
     const schemes: Record<string, string[]> = {

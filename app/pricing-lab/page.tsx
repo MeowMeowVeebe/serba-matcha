@@ -87,7 +87,7 @@ export default function PricingLabPage() {
 
                 <div className="pricing-lab__grid">
                   {experiments.map((experiment) => (
-                    <MetricCard key={experiment.id} title={experiment.title} value={experiment.value} change={experiment.change} />
+                    <MetricCard key={experiment.id} title={experiment.title} value={experiment.value} change={parseFloat(experiment.change) || 0} />
                   ))}
                 </div>
 

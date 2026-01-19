@@ -11,9 +11,9 @@ export async function GET(request: Request) {
 
     // Check if user has admin role
     const user = await prisma.user.findUnique({
-      where: { id: session.userId },
+      where: { id: session.sub },
       include: {
-        userRoles: {
+        roles: {
           include: {
             role: true,
           },
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       },
     });
 
-    const isAdmin = user?.userRoles.some((ur) => ur.role.name === "admin");
+    const isAdmin = user?.roles.some((ur) => ur.role.name === "admin");
     if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -55,12 +55,12 @@ export async function GET(request: Request) {
       },
     });
 
-    // Failed login attempts (last 24h)
+    // Failed login attempts (last 24h) - statusCode >= 400 indicates failure
     const failedLogins = await prisma.auditLog.count({
       where: {
         action: "auth:login",
-        status: "failure",
-        timestamp: { gte: last24h },
+        statusCode: { gte: 400 },
+        createdAt: { gte: last24h },
       },
     });
 
@@ -68,8 +68,8 @@ export async function GET(request: Request) {
     const securityEvents = await prisma.auditLog.count({
       where: {
         action: { in: ["auth:login", "auth:logout", "auth:password_reset"] },
-        status: "failure",
-        timestamp: { gte: last7days },
+        statusCode: { gte: 400 },
+        createdAt: { gte: last7days },
       },
     });
 
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
     const topActions = await prisma.auditLog.groupBy({
       by: ["action"],
       where: {
-        timestamp: { gte: last30days },
+        createdAt: { gte: last30days },
       },
       _count: {
         id: true,

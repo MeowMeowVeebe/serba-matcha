@@ -27,32 +27,45 @@ async function main() {
 
   console.log(`Created ${orders.length} orders`);
 
-  // Create weekly revenue data
+  // Create revenue data for the past 365 days (to support week/month/year views)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const weeklyData = [
-    { daysAgo: 6, revenue: 500000, orders: 12 },
-    { daysAgo: 5, revenue: 650000, orders: 15 },
-    { daysAgo: 4, revenue: 700000, orders: 18 },
-    { daysAgo: 3, revenue: 450000, orders: 10 },
-    { daysAgo: 2, revenue: 800000, orders: 20 },
-    { daysAgo: 1, revenue: 750000, orders: 17 },
-    { daysAgo: 0, revenue: 575000, orders: 14 },
-  ];
+  console.log("Creating daily revenue data for the past 365 days...");
 
-  for (const data of weeklyData) {
+  // Generate realistic revenue data with some variance
+  const baseRevenue = 500000; // Base daily revenue
+  const variance = 300000; // Random variance up/down
+  
+  for (let daysAgo = 364; daysAgo >= 0; daysAgo--) {
     const date = new Date(today);
-    date.setDate(date.getDate() - data.daysAgo);
+    date.setDate(date.getDate() - daysAgo);
+    
+    // Add some patterns: weekends have higher revenue, seasonal trends
+    const dayOfWeek = date.getDay();
+    const month = date.getMonth();
+    
+    // Weekend boost (Sat=6, Sun=0)
+    const weekendBoost = (dayOfWeek === 0 || dayOfWeek === 6) ? 1.3 : 1.0;
+    
+    // Seasonal trends (higher in Dec, lower in Feb)
+    const seasonalMultiplier = 1 + (Math.sin((month - 2) * Math.PI / 6) * 0.2);
+    
+    // Random variance with seed based on date for consistency
+    const seed = date.getTime();
+    const randomFactor = 0.7 + ((seed % 1000) / 1000) * 0.6; // 0.7 to 1.3
+    
+    const revenue = Math.floor(baseRevenue * weekendBoost * seasonalMultiplier * randomFactor);
+    const ordersCount = Math.floor(revenue / 40000) + Math.floor((seed % 10)); // Approx orders based on revenue
 
     await prisma.dailyRevenue.upsert({
       where: { date },
-      update: { revenue: data.revenue, orders: data.orders },
-      create: { date, revenue: data.revenue, orders: data.orders },
+      update: { revenue, orders: ordersCount },
+      create: { date, revenue, orders: ordersCount },
     });
   }
 
-  console.log("Created weekly revenue data");
+  console.log("Created 365 days of revenue data");
   console.log("Dashboard seed completed!");
 }
 

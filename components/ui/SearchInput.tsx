@@ -21,7 +21,7 @@ export function SearchInput({
   isLoading = false,
 }: SearchInputProps) {
   const [query, setQuery] = useState("");
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
     if (timeoutRef.current) {

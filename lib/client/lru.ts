@@ -30,4 +30,16 @@ export class LruCache<K, V> {
   has(key: K) {
     return this.map.has(key);
   }
+
+  delete(key: K) {
+    return this.map.delete(key);
+  }
+
+  clear() {
+    this.map.clear();
+  }
+
+  get size() {
+    return this.map.size;
+  }
 }

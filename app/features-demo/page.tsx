@@ -74,7 +74,8 @@ export default function FeaturesDemoPage() {
       </div>
 
       {/* Quick Actions Bar */}
-      <Card variant="bordered" style={{ marginBottom: "2rem" }}>
+      <div style={{ marginBottom: "2rem" }}>
+      <Card variant="bordered">
         <CardBody>
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
             <ThemeCustomizer />
@@ -136,6 +137,7 @@ export default function FeaturesDemoPage() {
           </div>
         </CardBody>
       </Card>
+      </div>
 
       {/* Feature Sections */}
       <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
@@ -299,7 +301,8 @@ export default function FeaturesDemoPage() {
       </div>
 
       {/* Summary */}
-      <Card variant="bordered" style={{ marginTop: "3rem", background: "linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)" }}>
+      <div style={{ marginTop: "3rem", background: "linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)", borderRadius: "8px" }}>
+      <Card variant="bordered">
         <CardBody>
           <h2 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: "1rem", color: "#2E7D32" }}>
             🎉 All Features Implemented Successfully!
@@ -356,6 +359,7 @@ export default function FeaturesDemoPage() {
           </div>
         </CardBody>
       </Card>
+      </div>
     </div>
   );
 }

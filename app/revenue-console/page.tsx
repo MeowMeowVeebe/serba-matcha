@@ -88,7 +88,7 @@ export default function RevenueConsolePage() {
 
                 <div className="revenue-console__grid">
                   {metrics.map((metric) => (
-                    <MetricCard key={metric.id} title={metric.title} value={metric.value} change={metric.change} />
+                    <MetricCard key={metric.id} title={metric.title} value={metric.value} change={parseFloat(metric.change) || 0} />
                   ))}
                 </div>
 

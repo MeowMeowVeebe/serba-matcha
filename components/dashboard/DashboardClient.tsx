@@ -612,7 +612,6 @@ export function DashboardClient() {
                         data: compareMetrics.charts.userGrowth.map((item) => item.count),
                         borderColor: "#9CA3AF",
                         backgroundColor: "rgba(156, 163, 175, 0.1)",
-                        borderDash: [5, 5],
                       }
                     ] : []),
                   ],

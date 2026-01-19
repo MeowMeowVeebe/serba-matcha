@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AccountShell } from "@/components/AccountShell";
+import AccountShell from "@/components/AccountShell";
 import {
   // Batch 2 Components
   SwipeableCard,
@@ -347,7 +347,7 @@ export default function EnhancedDemoV2Page() {
       <SoundProvider>
         <VimNavigationProvider>
           <CelebrationProvider>
-            <AccountShell>
+            <AccountShell title="Enhanced Demo V2" description="Demo of enhanced components">
               <DemoContent />
             </AccountShell>
           </CelebrationProvider>

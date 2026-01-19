@@ -1,13 +1,44 @@
 import { prisma } from "./prisma";
 import type { PasswordHash } from "./password";
+import { LruCache } from "@/lib/client/lru";
 
 export type UserRecord = {
   id: string;
   email: string;
   name: string;
+  phone: string | null;
+  avatar: string | null;
   password: PasswordHash;
   createdAt: string;
+  roles: string[];
 };
+
+// In-memory cache for frequent user lookups (5 second TTL, max 100 entries)
+const userCacheById = new LruCache<string, { user: UserRecord; expires: number }>(100);
+const userCacheByEmail = new LruCache<string, { user: UserRecord; expires: number }>(100);
+const CACHE_TTL_MS = 5000; // 5 seconds
+
+function getCachedUser(cache: LruCache<string, { user: UserRecord; expires: number }>, key: string): UserRecord | null {
+  const cached = cache.get(key);
+  if (cached && cached.expires > Date.now()) {
+    return cached.user;
+  }
+  if (cached) {
+    cache.delete(key);
+  }
+  return null;
+}
+
+function setCachedUser(user: UserRecord) {
+  const entry = { user, expires: Date.now() + CACHE_TTL_MS };
+  userCacheById.set(user.id, entry);
+  userCacheByEmail.set(user.email.toLowerCase(), entry);
+}
+
+export function invalidateUserCache(idOrEmail: string) {
+  userCacheById.delete(idOrEmail);
+  userCacheByEmail.delete(idOrEmail.toLowerCase());
+}
 
 function toPasswordHash(u: {
   passwordAlgo: string;
@@ -34,27 +65,68 @@ function fromPasswordHash(p: PasswordHash) {
 
 export async function findUserByEmail(email: string): Promise<UserRecord | null> {
   const lower = email.trim().toLowerCase();
-  const u = await prisma.user.findUnique({ where: { email: lower } });
+  
+  // Check cache first
+  const cached = getCachedUser(userCacheByEmail, lower);
+  if (cached) return cached;
+  
+  const u = await prisma.user.findUnique({ 
+    where: { email: lower },
+    include: {
+      roles: {
+        include: {
+          role: true,
+        },
+      },
+    },
+  });
   if (!u) return null;
-  return {
+  
+  const user: UserRecord = {
     id: u.id,
     email: u.email,
     name: u.name,
+    phone: u.phone,
+    avatar: u.avatar,
     password: toPasswordHash(u),
     createdAt: u.createdAt.toISOString(),
+    roles: u.roles.map((r) => r.role.name),
   };
+  
+  setCachedUser(user);
+  return user;
 }
 
 export async function findUserById(id: string): Promise<UserRecord | null> {
-  const u = await prisma.user.findUnique({ where: { id } });
+  // Check cache first
+  const cached = getCachedUser(userCacheById, id);
+  if (cached) return cached;
+  
+  const u = await prisma.user.findUnique({ 
+    where: { id },
+    include: {
+      roles: {
+        include: {
+          role: true,
+        },
+      },
+    },
+  });
   if (!u) return null;
-  return {
+  
+  const user: UserRecord = {
     id: u.id,
     email: u.email,
     name: u.name,
+    phone: u.phone,
+    avatar: u.avatar,
     password: toPasswordHash(u),
     createdAt: u.createdAt.toISOString(),
+    roles: u.roles.map((r) => r.role.name),
   };
+  
+  setCachedUser(user);
+  return user;
 }
 
 export async function createUser(params: {
@@ -70,14 +142,24 @@ export async function createUser(params: {
         name: params.name,
         ...fromPasswordHash(params.password),
       },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
     });
 
     return {
       id: u.id,
       email: u.email,
       name: u.name,
+      phone: u.phone,
+      avatar: u.avatar,
       password: toPasswordHash(u),
       createdAt: u.createdAt.toISOString(),
+      roles: u.roles.map((r) => r.role.name),
     };
   } catch (e: unknown) {
     // Prisma unique constraint
@@ -95,21 +177,42 @@ export async function createUser(params: {
 export async function updateUserProfile(params: {
   id: string;
   name?: string;
+  phone?: string | null;
+  avatar?: string | null;
   password?: PasswordHash;
 }): Promise<UserRecord> {
+  // Invalidate cache before update
+  invalidateUserCache(params.id);
+  
   const u = await prisma.user.update({
     where: { id: params.id },
     data: {
       name: params.name,
+      ...(params.phone !== undefined ? { phone: params.phone } : {}),
+      ...(params.avatar !== undefined ? { avatar: params.avatar } : {}),
       ...(params.password ? fromPasswordHash(params.password) : {}),
+    },
+    include: {
+      roles: {
+        include: {
+          role: true,
+        },
+      },
     },
   });
 
-  return {
+  const user: UserRecord = {
     id: u.id,
     email: u.email,
     name: u.name,
+    phone: u.phone,
+    avatar: u.avatar,
     password: toPasswordHash(u),
     createdAt: u.createdAt.toISOString(),
+    roles: u.roles.map((r) => r.role.name),
   };
+  
+  // Update cache with new data
+  setCachedUser(user);
+  return user;
 }

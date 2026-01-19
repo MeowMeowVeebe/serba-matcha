@@ -16,6 +16,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; form?: string }>({});
+  const [step, setStep] = useState(1);
   const { showAlert } = useAlert();
 
   const canSubmit = useMemo(() => Boolean(email.trim()) && !isSubmitting, [email, isSubmitting]);

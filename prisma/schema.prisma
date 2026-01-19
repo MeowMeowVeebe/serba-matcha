@@ -11,6 +11,8 @@ model User {
   id           String               @id @default(cuid())
   email        String               @unique
   name         String
+  phone        String?
+  avatar       String?              // Base64 or URL
   passwordAlgo String
   passwordIter Int
   passwordSalt String

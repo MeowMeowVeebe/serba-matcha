@@ -44,7 +44,7 @@ export default function LoginClient() {
   };
 
   return (
-    <AuthShell title="Welcome Back" subtitle="Sign in to your account">
+    <AuthShell ariaLabel="Login" headerTitle="Welcome Back" headerDescription="Sign in to your account">
       <Card variant="elevated" padding="lg">
         <CardBody>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -70,7 +70,7 @@ export default function LoginClient() {
               onChange={(e) => setEmail(e.target.value)}
               error={errors.email}
               required
-              autoComplete="email"
+              autoComplete="off"
             />
 
             <Input
@@ -81,7 +81,7 @@ export default function LoginClient() {
               onChange={(e) => setPassword(e.target.value)}
               error={errors.password}
               required
-              autoComplete="current-password"
+              autoComplete="off"
             />
             <PasswordStoryline password={password} />
 

@@ -55,6 +55,42 @@ const DEFAULT_TOUR_STEPS: TourStep[] = [
   },
 ];
 
+// Export dashboard tour steps for external use
+export const dashboardTourSteps: TourStep[] = DEFAULT_TOUR_STEPS;
+
+// Custom hook for tour control
+export function useTour() {
+  const [isActive, setIsActive] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const startTour = () => {
+    setCurrentStep(0);
+    setIsActive(true);
+  };
+
+  const endTour = () => {
+    setIsActive(false);
+    setCurrentStep(0);
+  };
+
+  const nextStep = () => {
+    setCurrentStep((prev) => prev + 1);
+  };
+
+  const prevStep = () => {
+    setCurrentStep((prev) => Math.max(0, prev - 1));
+  };
+
+  return {
+    isActive,
+    currentStep,
+    startTour,
+    endTour,
+    nextStep,
+    prevStep,
+  };
+}
+
 export function OnboardingTour() {
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);

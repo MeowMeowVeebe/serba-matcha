@@ -87,7 +87,7 @@ export default function CustomerSuccessHubPage() {
 
                 <div className="success-hub__grid">
                   {signals.map((signal) => (
-                    <MetricCard key={signal.id} title={signal.title} value={signal.value} change={signal.change} />
+                    <MetricCard key={signal.id} title={signal.title} value={signal.value} change={parseFloat(signal.change) || 0} />
                   ))}
                 </div>
 

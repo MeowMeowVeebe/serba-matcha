@@ -1,25 +1,8 @@
 import ClientLayout from "./ClientLayout";
+// Core CSS only - critical for initial render
 import "./globals.css";
 import "../styles/design-system.css";
 import "../styles/datatable.css";
-import "../styles/advanced-components.css";
-import "../styles/print.css";
-import "../styles/datepicker.css";
-// Enhanced Components CSS (Rekomendasi Frontend Batch 1)
-import "../styles/parallax.css";
-import "../styles/glassmorphism.css";
-import "../styles/animated-data.css";
-import "../styles/theme-generator.css";
-import "../styles/journey-map.css";
-import "../styles/branded-skeleton.css";
-import "../styles/smart-command.css";
-import "../styles/ambient-onboarding.css";
-// Enhanced Components CSS (Rekomendasi Frontend Batch 2)
-import "../styles/swipeable-gestures.css";
-import "../styles/sound-dashboard.css";
-import "../styles/notification-comparison.css";
-import "../styles/avatar-vim-inline.css";
-import "../styles/i18n-celebrations.css";
 
 export const metadata = {
   title: "Serba Matcha - Admin Dashboard",

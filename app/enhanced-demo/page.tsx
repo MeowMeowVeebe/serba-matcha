@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AccountShell } from "@/components/AccountShell";
+import AccountShell from "@/components/AccountShell";
 import {
   ParallaxCard,
   InteractiveCard,
@@ -81,7 +81,7 @@ export default function EnhancedDemoPage() {
   ];
 
   return (
-    <AccountShell>
+    <AccountShell title="Enhanced Demo" description="Demo of enhanced components">
       {/* Ambient Background */}
       <AmbientBackground 
         enabled={ambientEnabled} 
@@ -94,11 +94,7 @@ export default function EnhancedDemoPage() {
       <SmartCommandBar commands={commands} />
       
       {/* Onboarding Tour */}
-      <OnboardingTour 
-        steps={dashboardTourSteps} 
-        tourId="enhanced-demo"
-        gamification
-      />
+      <OnboardingTour />
 
       <div className="dashboard-header" style={{ marginBottom: "2rem" }}>
         <div>
@@ -115,7 +111,7 @@ export default function EnhancedDemoPage() {
             enabled={ambientEnabled}
             onToggle={setAmbientEnabled}
             variant={ambientVariant}
-            onVariantChange={setAmbientVariant}
+            onVariantChange={(v) => v && setAmbientVariant(v)}
           />
         </div>
       </div>
@@ -134,7 +130,7 @@ export default function EnhancedDemoPage() {
               <MetricCard
                 icon={metric.icon}
                 title={metric.title}
-                value={typeof metric.value === "number" ? <AnimatedCounter value={metric.value} prefix={metric.title.includes("Revenue") ? "$" : ""} /> : metric.value}
+                value={typeof metric.value === "number" ? (metric.title.includes("Revenue") ? `$${metric.value.toLocaleString()}` : metric.value) : metric.value}
                 change={metric.change}
                 changeType={metric.changeType}
                 trend={metric.trend}
