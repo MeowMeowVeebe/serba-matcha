@@ -1,8 +1,7 @@
-import Home from '@/app/page/home/page'
+import { redirect } from "next/navigation";
+
 
 
 export default function defaults() {
-  return (
-    <Home/>
-  );
+   redirect("/home");
 }
