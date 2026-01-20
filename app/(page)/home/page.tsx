@@ -23,30 +23,32 @@ export default function homepage() {
           <p className='text-white text-center mt-2 text-xl'> Fresh. Natural. Energizing.</p>
         </div>
 
-       <Image
-                    src="/female-barrista.png"
-                    alt="Portrait Frame"
-                    width={1000}
-                    height={1000}
-                    className="absolute object-contain pointer-events-none z-20 w-120 h-120 bottom-0 right-50"
-                  />
+        <Image
+          src="/female-barrista.png"
+          alt="Portrait Frame"
+          width={1000}
+          height={1000}
+          className="absolute object-contain pointer-events-none z-20 w-120 h-120 bottom-0 right-50"
+        />
 
-    
+
       </section>
       {/* Hero Section */}
-      <section className="relative mx-auto px-6 h-129 text-center py-12 bg-gradient-to-b from-green-100 to-green-50">
+      <section className="relative mx-auto px-6   min-h-[32rem] text-center py-12 bg-gradient-to-b from-[#FAF8F5] to-[#F4F1EC]">
 
-        <h1 className="text-4xl font-bold text-green-900 " >
+        <h1 className="text-4xl font-bold text-[#2E2E2E]">
           Serba Matcha
         </h1>
-<div className="
+        <div className="
   mt-6
   max-w-6xl
   mx-auto
   columns-1
   gap-10
-  text-green-800/80
+  text-[#2E2E2E]
+
   leading-relaxed
+  
 ">
           <p>
             Serba Matcha Coffee Company adalah perusahaan minuman berbasis teh matcha dan kopi
@@ -80,7 +82,7 @@ export default function homepage() {
 
 
         <div className="mt-8 flex justify-center gap-4">
-        
+
           <Link
             href="/about"
             className="rounded-full border border-green-600 px-6 py-3 text-green-700 font-medium hover:bg-green-100 transition"
@@ -96,36 +98,60 @@ export default function homepage() {
 
 
 
+<section className="relative text-center px-6">
+  <div className="pointer-events-none absolute left-0 w-full h-10 bg-gradient-to-b from-black/10 to-transparent" />
+
+  <div className="flex flex-row flex-wrap items-center justify-center gap-12 py-12">
+     <div className="flex flex-col items-center gap-3">
+    <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
+
+            <img src="/matcha-tea.png" alt="Fresh Icon"  className="w-1/2 h-1/2"/>
+    </div>
+    <p className="text-sm text-green-900 font-medium">Excellent Drinks</p>
+  </div>
+
+  <div className="flex flex-col items-center gap-3">
+    <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
+            <img src="/leaf.png" alt="Fresh Icon"  className="w-1/2 h-1/2"/>
+    </div>
+    <p className="text-sm text-green-900 font-medium">Excellent Matcha</p>
+  </div>
+
+  <div className="flex flex-col items-center gap-3">
+    <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
+              <img src="/quality.png" alt="Fresh Icon"  className="w-1/2 h-1/2"/>
+    </div>
+    <p className="text-sm text-green-900 font-medium">High Quality</p>
+  </div>
+
+  <div className="flex flex-col items-center gap-3">
+    <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center"> 
+      <img src="/trust.png" alt="Fresh Icon"  className="w-1/2 h-1/2"/>
+    </div>
+    <p className="text-sm text-green-900 font-medium">Made With Love</p>
+
+  </div>
+
+  </div>
+
+    <div className="pointer-events-none absolute bottom-0 left-0 w-full h-10 bg-gradient-to-b from-transparent to-black/10 " />
+
+</section>
+
+
+
+
+
       {/* Products Section */}
       <section className="mx-auto max-w-6xl px-6 py-12 relative">
 
 
 
         <h2 className="text-2xl font-semibold text-green-900 mb-6 text-center">
-          Featured Matcha 🍃
+          Featured Matcha
         </h2>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            { name: "Matcha Latte", desc: "Smooth and creamy everyday drink." },
-            { name: "Premium Matcha", desc: "Ceremonial grade green tea powder." },
-            { name: "Matcha Cookies", desc: "Sweet treats with matcha flavor." },
-          ].map((item) => (
-            <div
-              key={item.name}
-              className="rounded-2xl border border-green-200 bg-white p-6 shadow-sm hover:shadow-md transition"
-            >
-              <h3 className="font-semibold text-green-900">{item.name}</h3>
-              <p className="text-sm text-green-800/70 mt-2">{item.desc}</p>
-              <Link
-                href="/shop"
-                className="mt-4 inline-block text-green-700 font-medium hover:underline"
-              >
-                View Product →
-              </Link>
-            </div>
-          ))}
-        </div>
+       
       </section>
 
       {/* About Section */}
