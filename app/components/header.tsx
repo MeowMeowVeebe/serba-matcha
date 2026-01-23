@@ -107,7 +107,7 @@ export default function Header() {
       group-hover:w-full
     "
             />          </Link>
-          <Link href="/about" className='relative group  font medium text-white'>
+          <Link href="/about_us" className='relative group  font medium text-white'>
             About
             <span
               className="
@@ -162,7 +162,7 @@ export default function Header() {
                   alt="Cart"
                   className="w-9 h-9 rounded-full"
                 />
-                <p> Cart</p>
+                <p className="text-white font-medium"> Cart</p>
               </div>
             </Link>
 
