@@ -1,0 +1,52 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+.turbo/
+app/ClientLayout.tsx
+ app/admin/audit-logs/AuditLogsClient.tsx.bak
+ app/admin/audit-logs/AuditLogsClientNew.tsx
+ app/admin/audit-logs/AuditLogsClient_test.tsx.bak
+ app/admin/audit-logs/AuditLogsClient_test2.tsx.bak
+ app/admin/audit-logs/AuditLogsClient_test3.tsx.bak
+ app/admin/audit-logs/page.tsx
+ app/admin/layout.tsx
+ app/admin/rbac/page.tsx
+ app/admin/users/UsersClient.tsx
+ app/admin/users/UsersClientNew.tsx
+ app/admin/users/page.tsx
+ app/api/admin/audit-logs/[id]/route.ts
+ app/api/admin/audit-logs/cleanup/route.ts
+ app/api/admin/audit-logs/exports/[id]/cancel/route.ts
+ app/api/admin/audit-logs/exports/[id]/download/route.ts
+ app/api/admin/audit-logs/exports/[id]/retry/route.ts
+ Dpp/api/admin/audit-logs/exports/[id]/route.ts
+ app/api/admin/audit-logs/exports/cancel-all/route.ts
+app/api/admin/audit-logs/exports/cleanup/route.ts
+# build
+dist/
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# Prisma / DB
+dev.db
+*.db
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/

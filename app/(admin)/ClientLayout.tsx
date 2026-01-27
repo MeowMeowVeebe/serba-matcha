@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useCallback } from "react";
 import { SWRConfig } from "swr";
-import { AlertProvider } from "../context/AlertContext";
+import { AlertProvider } from "@/context/AlertContext";
 import { ToastProvider } from "@/components/ui/ToastManager";
 import { LoadingBar } from "@/components/ui/LoadingBar";
 import { CommandPalette } from "@/components/ui/CommandPalette";

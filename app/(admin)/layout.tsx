@@ -1,8 +1,8 @@
 import ClientLayout from "./ClientLayout";
 // Core CSS only - critical for initial render
 import "./globals.css";
-import "../styles/design-system.css";
-import "../styles/datatable.css";
+import "@/styles/design-system.css";
+import "@/styles/datatable.css";
 
 export const metadata = {
   title: "Serba Matcha - Admin Dashboard",

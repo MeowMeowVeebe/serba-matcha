@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/dev.ts",
+    "dev": "tsx scripts/dev.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@babel/parser": "^7.28.6",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^20.19.30",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/supertest": "^6.0.3",
@@ -43,8 +43,9 @@
     "prisma": "^6.2.1",
     "supertest": "^7.2.2",
     "tailwindcss": "^4",
-    "tsx": "^4.20.5",
-    "typescript": "^5",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.17"
   }
 }
