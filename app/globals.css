@@ -78,6 +78,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Blue-Winter";
+  src: url("/fonts/blue-winter.ttf") format("truetype");
+  font-weight: 600;
+  font-style: bold;
+  font-display: swap;
+}
+
 
 body {
   background: var(--background);

@@ -107,7 +107,7 @@ export default function Header() {
       group-hover:w-full
     "
             />          </Link>
-          <Link href="/about" className='relative group  font medium text-white'>
+          <Link href="/about_us" className='relative group  font medium text-white'>
             About
             <span
               className="

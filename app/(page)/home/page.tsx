@@ -24,6 +24,14 @@ export default function homepage() {
         </div>
 
         <Image
+          src="/logo/serbamatcha.png"
+          alt="Portrait Frame"
+          width={1000}
+          height={1000}
+          className="absolute object-contain pointer-events-none z-20 w-60 h-60 top-30"
+        />
+
+        <Image
           src="/female-barrista.png"
           alt="Portrait Frame"
           width={1000}
@@ -84,7 +92,7 @@ export default function homepage() {
         <div className="mt-8 flex justify-center gap-4">
 
           <Link
-            href="/about"
+            href="/about_us"
             className="rounded-full border border-green-600 px-6 py-3 text-green-700 font-medium hover:bg-green-100 transition"
           >
             About us
@@ -98,60 +106,60 @@ export default function homepage() {
 
 
 
-<section className="relative text-center px-6">
-  <div className="pointer-events-none absolute left-0 w-full h-10 bg-gradient-to-b from-black/10 to-transparent" />
+      <section className="relative text-center px-6">
+        <div className="pointer-events-none absolute left-0 w-full h-10 bg-gradient-to-b from-black/10 to-transparent" />
 
-  <div className="flex flex-row flex-wrap items-center justify-center gap-12 py-12">
-     <div className="flex flex-col items-center gap-3">
-    <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
+        <div className="flex flex-row flex-wrap items-center justify-center gap-12 py-12">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
 
-            <img src="/matcha-tea.png" alt="Fresh Icon"  className="w-1/2 h-1/2"/>
-    </div>
-    <p className="text-sm text-green-900 font-medium">Excellent Drinks</p>
-  </div>
+              <img src="/matcha-tea.png" alt="Fresh Icon" className="w-1/2 h-1/2" />
+            </div>
+            <p className="text-sm text-green-900 font-medium">Excellent Drinks</p>
+          </div>
 
-  <div className="flex flex-col items-center gap-3">
-    <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
-            <img src="/leaf.png" alt="Fresh Icon"  className="w-1/2 h-1/2"/>
-    </div>
-    <p className="text-sm text-green-900 font-medium">Excellent Matcha</p>
-  </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
+              <img src="/leaf.png" alt="Fresh Icon" className="w-1/2 h-1/2" />
+            </div>
+            <p className="text-sm text-green-900 font-medium">Excellent Matcha</p>
+          </div>
 
-  <div className="flex flex-col items-center gap-3">
-    <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
-              <img src="/quality.png" alt="Fresh Icon"  className="w-1/2 h-1/2"/>
-    </div>
-    <p className="text-sm text-green-900 font-medium">High Quality</p>
-  </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
+              <img src="/quality.png" alt="Fresh Icon" className="w-1/2 h-1/2" />
+            </div>
+            <p className="text-sm text-green-900 font-medium">High Quality</p>
+          </div>
 
-  <div className="flex flex-col items-center gap-3">
-    <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center"> 
-      <img src="/trust.png" alt="Fresh Icon"  className="w-1/2 h-1/2"/>
-    </div>
-    <p className="text-sm text-green-900 font-medium">Made With Love</p>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-24 h-24 bg-[#FAF8F5] rounded-full border-4 border-green-700 flex items-center justify-center">
+              <img src="/trust.png" alt="Fresh Icon" className="w-1/2 h-1/2" />
+            </div>
+            <p className="text-sm text-green-900 font-medium">Made With Love</p>
 
-  </div>
+          </div>
 
-  </div>
+        </div>
 
-    <div className="pointer-events-none absolute bottom-0 left-0 w-full h-10 bg-gradient-to-b from-transparent to-black/10 " />
+        <div className="pointer-events-none absolute bottom-0 left-0 w-full h-10 bg-gradient-to-b from-transparent to-black/10 " />
 
-</section>
+      </section>
 
 
 
 
 
       {/* Products Section */}
-      <section className="mx-auto max-w-6xl px-6 py-12 relative">
+      <section className="flex justify-center max-w-full px-6 pb-12 relative bg-[#F4F1EC]  ">
 
+        <div className="pointer-events-none absolute left-0 w-full h-10 bg-gradient-to-b from-black/10 to-transparent" />
 
-
-        <h2 className="text-2xl font-semibold text-green-900 mb-6 text-center">
+        <h2 className="text-2xl font-semibold text-green-900 mb-6 text-center mt-10 ">
           Featured Matcha
         </h2>
 
-       
+
       </section>
 
       {/* About Section */}
