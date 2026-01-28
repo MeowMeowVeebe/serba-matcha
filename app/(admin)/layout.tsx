@@ -2,6 +2,7 @@ import ClientLayout from "./ClientLayout";
 // Core CSS only - critical for initial render
 import "./globals.css";
 import "@/styles/design-system.css";
+import "@/styles/matcha-design-system.css";
 import "@/styles/datatable.css";
 
 export const metadata = {

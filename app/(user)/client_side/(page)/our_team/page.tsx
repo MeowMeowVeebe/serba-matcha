@@ -1,5 +1,5 @@
 
-import contact from '@/app/components/contact';
+
 import Image from "next/image";
 
 export default function our_teampage() {

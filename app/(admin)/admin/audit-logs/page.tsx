@@ -67,16 +67,16 @@ export default async function AdminAuditLogsPage({
   };
 }) {
   const session = await getSessionPayloadFromNextCookies();
-  if (!session) redirect("/login");
+  if (!session) redirect("admin_dashboard/login");
 
   const me = await findUserById(session.sub);
-  if (!me) redirect("/login");
+  if (!me) redirect("admin_dashboard/login");
 
   await bootstrapAdminIfNeeded();
   await ensureDefaultAdminPermissions();
 
   const ok = await requirePermission({ userId: me.id, permissionName: PERMISSIONS.ADMIN_AUDIT_READ });
-  if (!ok) redirect("/dashboard");
+  if (!ok) redirect("admin_dashboard/dashboard");
 
   const action = (searchParams?.action ?? "").trim();
   const q = (searchParams?.q ?? "").trim();

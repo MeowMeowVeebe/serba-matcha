@@ -154,6 +154,18 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
             ),
           },
           {
+            href: "/client_side/home",
+            label: "Client Site",
+            icon: (
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+                <path
+                  fill="currentColor"
+                  d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-6v-6H10v6H4a1 1 0 0 1-1-1V9.5z"
+                />
+              </svg>
+            ),
+          },
+          {
             href: "/settings",
             label: "Settings",
             icon: (

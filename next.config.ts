@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-<<<<<<< HEAD
   // Performance optimizations
   reactStrictMode: true,
   poweredByHeader: false,
@@ -88,20 +87,9 @@ const nextConfig: NextConfig = {
           { key: "Expires", value: "0" },
         ],
       },
-      {
-        source: "/(.*)",
-        has: [{ type: "host", value: "127.0.0.1(:\\d+)?" }],
-        headers: [
-          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate" },
-          { key: "Pragma", value: "no-cache" },
-          { key: "Expires", value: "0" },
-        ],
-      },
+   
     ];
   },
-=======
-  /* config options here */
->>>>>>> origin
 };
 
 export default nextConfig;

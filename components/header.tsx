@@ -4,7 +4,8 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUser } from "@/lib/hooks/useUser";
 
 
 const linkClass = (showBg: boolean) =>
@@ -18,8 +19,10 @@ const linkClass = (showBg: boolean) =>
 export default function Header() {
   const [showBg, setShowBg] = useState(false);
 
-  const isHome = usePathname() === "/home";
   const pathname = usePathname();
+  const isHome = pathname === "/client_side/home" || pathname === "/home";
+  const router = useRouter();
+  const { user } = useUser();
 
   useEffect(() => {
 
@@ -46,9 +49,9 @@ export default function Header() {
   return (
     <motion.header
 
-      className={`fixed top-0 z-[100] w-full py-3 font-['Montserrat-Semibold'] card-header
-    ${isHome ? "flex justify-center" : "flex sticky justify-center"}
-  `}
+      className={`fixed top-0 z-[100] w-full py-3 font-['Montserrat-Semibold'] card-header ${
+        isHome ? "flex justify-center" : "flex sticky justify-center"
+      }`}
       animate={{
         backgroundColor: showBg ? "#06402B" : "rgba(148,219,148,0)",
 
@@ -57,9 +60,9 @@ export default function Header() {
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
 
-      <div className=" flex w-3/4  items-center justify-between px-6 py-5 text-xl">
+      <div className="flex w-full max-w-6xl items-center justify-between px-4 sm:px-6 py-3 text-lg sm:text-xl">
 
-        <motion.header className="absolute hidden h-full w-3/4 border-b-3 border-white top-3 pointer-events-none md:flex"
+        <motion.header className="absolute hidden h-full w-full max-w-6xl border-b-3 border-white top-3 pointer-events-none md:flex"
           animate={{
             opacity: showBg ? 0 : 1,
           }}
@@ -70,16 +73,16 @@ export default function Header() {
         </motion.header>
 
         {/* Logo */}
-        <Link href="/" className={`text-2xl font-medium transition-colors ${showBg ? "text-[#22b982] hover:text-green-900" : "text-white hover:text-white/80"
+        <Link href="/client_side" className={`text-2xl font-medium transition-colors ${showBg ? "text-[#22b982] hover:text-green-900" : "text-white hover:text-white/80"
           }`}>
           Serba Matcha
         </Link>
 
         {/* Navigation */}
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-8 md:flex flex justify-between">
+        <nav className="hidden items-center gap-6 lg:gap-8 md:flex flex justify-between">
           <Link
-            href="/home"
+            href="/client_side/home"
             className="relative group font-medium text-white"
           >
             Home
@@ -95,7 +98,7 @@ export default function Header() {
           </Link>
 
 
-          <Link href="/our_team" className='relative group  font medium text-white'>
+          <Link href="/client_side/our_team" className='relative group  font medium text-white'>
             Our Teams
 
             <span
@@ -107,7 +110,7 @@ export default function Header() {
       group-hover:w-full
     "
             />          </Link>
-          <Link href="/about_us" className='relative group  font medium text-white'>
+          <Link href="/client_side/about_us" className='relative group  font medium text-white'>
             About
             <span
               className="
@@ -120,7 +123,7 @@ export default function Header() {
             />
           </Link>
 
-          <Link href="/menu" className='relative group  font medium text-white'>
+          <Link href="/client_side/menu" className='relative group  font medium text-white'>
             Menu
 
             <span
@@ -133,36 +136,49 @@ export default function Header() {
     "
             />          </Link>
 
-
         </nav>
 
-        <nav className="flex flex-row items-center gap-3">
-
-
-
-
-
+        <nav className="flex flex-row items-center gap-2 sm:gap-3">
           <div className="flex flex-row items-center">
-            <img
-              src="/Profile.png"
-              alt="User Avatar"
-              className="w-10 h-10 rounded-full"
-            />
-            <p className="text-white font-medium ml-2">Login</p>
+            {user ? (
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1.5 text-white backdrop-blur transition hover:bg-white/20"
+                title="Go to Dashboard"
+              >
+                <div className="h-9 w-9 overflow-hidden rounded-full bg-white/20">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-white">
+                      {user.name.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <span className="text-sm font-semibold max-w-[120px] truncate">{user.name}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => router.push("/login")}
+                className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-white backdrop-blur transition hover:bg-white/20 text-sm"
+              >
+                <img src="/Profile.png" alt="Login" className="h-8 w-8 rounded-full" />
+                <span className="text-sm font-semibold">Login</span>
+              </button>
+            )}
           </div>
 
-
-          <div className="w-px h-6 bg-white"></div>
+          <div className="hidden sm:block w-px h-6 bg-white"></div>
 
           <div>
-            <Link href="/cart">
+            <Link href="/client_side/cart">
               <div className="flex flex-column items-center">
                 <img
                   src="/cart.png"
                   alt="Cart"
-                  className="w-9 h-9 rounded-full"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full"
                 />
-                <p> Cart</p>
+                <p className="text-xs sm:text-sm text-white"> Cart</p>
               </div>
             </Link>
 
@@ -195,15 +211,23 @@ export default function Header() {
                   }`}
               >
                 <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
-                  <Link href="/home">Home</Link>
+                  <Link href="/client_side/home">Home</Link>
                 </DropdownMenu.Item>
 
                 <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
-                  <Link href="/our_team">Our Team</Link>
+                  <Link href="/client_side/our_team">Our Team</Link>
                 </DropdownMenu.Item>
 
                 <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
-                  <Link href="/services">About</Link>
+                  <Link href="/client_side/about_us">About</Link>
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
+                  <Link href="/client_side/menu">Menu</Link>
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
+                  <Link href="/client_side/cart">Cart</Link>
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Portal>

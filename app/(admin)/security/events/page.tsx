@@ -35,7 +35,7 @@ export default function SecurityEventsPage() {
     <AccountShell
       title="Security Events"
       description="Log aktivitas keamanan"
-      breadcrumbs={[{ label: "Security", href: "/security" }, { label: "Events", href: "/security/events" }]}
+      breadcrumbs={[{ label: "Security", href: "admin_dashboard/security" }, { label: "Events", href: "admin_dashboard/security/events" }]}
     >
       {({ user, isLoadingUser, loadError }) => {
         useEffect(() => {
@@ -103,8 +103,8 @@ export default function SecurityEventsPage() {
                 </div>
 
                 <div className={styles.actions}>
-                  <Link className="secondary-btn" href="/security/sessions">Sessions</Link>
-                  <Link className="secondary-btn" href="/admin/audit-logs">Audit Logs</Link>
+                  <Link className="secondary-btn" href="admin_dashboard/security/sessions">Sessions</Link>
+                  <Link className="secondary-btn" href="admin_dashboard/admin/audit-logs">Audit Logs</Link>
                 </div>
               </>
             )}

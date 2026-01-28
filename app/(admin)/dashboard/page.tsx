@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
 import Chart from "chart.js/auto";
 import Link from "next/link";
 import AccountShell from "@/components/AccountShell";
-import SkeletonBlock from "@/components/ui/SkeletonBlock";
 
 // Types
 type DashboardData = {
@@ -35,58 +34,87 @@ type DashboardData = {
   }>;
 };
 
-// Icons
+// ✅ Small Icon Wrapper (forces consistent svg size)
+function Icon({ children, size = 20 }: { children: ReactNode; size?: number }) {
+  return (
+    <span className="matcha-icon" style={{ width: size, height: size }}>
+      {children}
+    </span>
+  );
+}
+
+// Icons (wrapped)
 const Icons = {
   orders: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-    </svg>
+    <Icon>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+    </Icon>
   ),
   revenue: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
+    <Icon>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </Icon>
   ),
   customers: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-    </svg>
+    <Icon>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+      </svg>
+    </Icon>
   ),
   trending: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-    </svg>
+    <Icon>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+      </svg>
+    </Icon>
   ),
   clock: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 6v6l4 2" />
-    </svg>
+    <Icon>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </svg>
+    </Icon>
   ),
   star: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-    </svg>
+    <Icon>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    </Icon>
   ),
   chart: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M18 20V10M12 20V4M6 20v-6" />
-    </svg>
+    <Icon>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M18 20V10M12 20V4M6 20v-6" />
+      </svg>
+    </Icon>
   ),
   refresh: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-    </svg>
+    <Icon>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+      </svg>
+    </Icon>
   ),
   arrowUp: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M18 15l-6-6-6 6" />
-    </svg>
+    <Icon size={16}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M18 15l-6-6-6 6" />
+      </svg>
+    </Icon>
   ),
   arrowDown: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M6 9l6 6 6-6" />
-    </svg>
+    <Icon size={16}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </Icon>
   ),
 };
 
@@ -107,13 +135,23 @@ function getStatusBadge(status: string) {
     pending: { class: "matcha-badge--info", label: "Pending" },
     cancelled: { class: "matcha-badge--danger", label: "Cancelled" },
   };
-  const { class: cls, label } = config[status] || { class: "matcha-badge--neutral", label: status };
+
+  const { class: cls, label } = config[status] || {
+    class: "matcha-badge--neutral",
+    label: status,
+  };
+
   return <span className={`matcha-badge ${cls}`}>{label}</span>;
 }
 
-// Stat Card Component
-function StatCard({ icon, label, value, trend, trendValue }: {
-  icon: React.ReactNode;
+function StatCard({
+  icon,
+  label,
+  value,
+  trend,
+  trendValue,
+}: {
+  icon: ReactNode;
   label: string;
   value: string | number;
   trend?: "up" | "down" | "neutral";
@@ -134,8 +172,7 @@ function StatCard({ icon, label, value, trend, trendValue }: {
   );
 }
 
-// Quick Action Component
-function QuickAction({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function QuickAction({ href, icon, label }: { href: string; icon: ReactNode; label: string }) {
   return (
     <Link href={href} className="quick-action">
       <div className="quick-action__icon">{icon}</div>
@@ -146,14 +183,8 @@ function QuickAction({ href, icon, label }: { href: string; icon: React.ReactNod
 
 export default function DashboardPage() {
   return (
-    <AccountShell
-      title="Dashboard"
-      description="Ringkasan bisnis Serba Matcha"
-      breadcrumbs={[{ label: "Dashboard" }]}
-    >
-      {({ user, isLoadingUser }) => (
-        <DashboardContent user={user} isLoadingUser={isLoadingUser} />
-      )}
+    <AccountShell title="Dashboard" description="Ringkasan bisnis Serba Matcha" breadcrumbs={[{ label: "Dashboard" }]}>
+      {({ user, isLoadingUser }) => <DashboardContent user={user} isLoadingUser={isLoadingUser} />}
     </AccountShell>
   );
 }
@@ -161,41 +192,43 @@ export default function DashboardPage() {
 function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
   const [activeTab, setActiveTab] = useState<"week" | "month" | "year">("week");
   const [chartData, setChartData] = useState<{ labels: string[]; values: number[] } | null>(null);
   const [isChartLoading, setIsChartLoading] = useState(false);
+
   const hasFetched = useRef(false);
 
-  // Fetch data function with period parameter
-  const fetchData = useCallback(async (period: "week" | "month" | "year" = "week", showRefresh = false) => {
-    if (!user) return;
-    if (showRefresh) setIsRefreshing(true);
-    else if (!hasFetched.current) setIsLoading(true);
-    else setIsChartLoading(true);
-    
-    try {
-      const res = await fetch(`/api/dashboard/data?period=${period}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
-        // Update chart data from API response
-        if (json.chart) {
-          setChartData({ labels: json.chart.labels, values: json.chart.values });
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch dashboard:", err);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-      setIsChartLoading(false);
-    }
-  }, [user]);
+  const fetchData = useCallback(
+    async (period: "week" | "month" | "year" = "week", showRefresh = false) => {
+      if (!user) return;
 
-  // Initial fetch - only once when user is available
+      if (showRefresh) setIsRefreshing(true);
+      else if (!hasFetched.current) setIsLoading(true);
+      else setIsChartLoading(true);
+
+      try {
+        const res = await fetch(`/api/dashboard/data?period=${period}`);
+        if (!res.ok) return;
+
+        const json: DashboardData = await res.json();
+        setData(json);
+        if (json.chart) setChartData({ labels: json.chart.labels, values: json.chart.values });
+      } catch (err) {
+        console.error("Failed to fetch dashboard:", err);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+        setIsChartLoading(false);
+      }
+    },
+    [user]
+  );
+
   useEffect(() => {
     if (user && !hasFetched.current) {
       hasFetched.current = true;
@@ -203,19 +236,18 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
     }
   }, [user, fetchData, activeTab]);
 
-  // Fetch new data when tab changes
-  const handleTabChange = useCallback((tab: "week" | "month" | "year") => {
-    setActiveTab(tab);
-    fetchData(tab);
-  }, [fetchData]);
+  const handleTabChange = useCallback(
+    (tab: "week" | "month" | "year") => {
+      setActiveTab(tab);
+      fetchData(tab);
+    },
+    [fetchData]
+  );
 
-  // Chart initialization
   useEffect(() => {
     if (!chartData || !canvasRef.current) return;
 
-    if (chartRef.current) {
-      chartRef.current.destroy();
-    }
+    chartRef.current?.destroy();
 
     const ctx = canvasRef.current.getContext("2d");
     if (!ctx) return;
@@ -228,20 +260,22 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
       type: "line",
       data: {
         labels: chartData.labels,
-        datasets: [{
-          label: "Revenue",
-          data: chartData.values,
-          borderColor: "#22c55e",
-          backgroundColor: gradient,
-          borderWidth: 3,
-          fill: true,
-          tension: 0.4,
-          pointBackgroundColor: "#22c55e",
-          pointBorderColor: "#fff",
-          pointBorderWidth: 2,
-          pointRadius: 5,
-          pointHoverRadius: 7,
-        }],
+        datasets: [
+          {
+            label: "Revenue",
+            data: chartData.values,
+            borderColor: "#22c55e",
+            backgroundColor: gradient,
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: "#22c55e",
+            pointBorderColor: "#fff",
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -261,33 +295,20 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           },
         },
         scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: "#9ca3af" },
-          },
+          x: { grid: { display: false }, ticks: { color: "#9ca3af" } },
           y: {
             grid: { color: "rgba(156, 163, 175, 0.1)" },
-            ticks: {
-              color: "#9ca3af",
-              callback: (value) => formatCurrency(value as number),
-            },
+            ticks: { color: "#9ca3af", callback: (value) => formatCurrency(value as number) },
           },
         },
-        interaction: {
-          intersect: false,
-          mode: "index",
-        },
+        interaction: { intersect: false, mode: "index" },
       },
     });
 
-    return () => {
-      chartRef.current?.destroy();
-    };
+    return () => chartRef.current?.destroy();
   }, [chartData]);
 
-  if (isLoadingUser || isLoading) {
-    return <DashboardSkeleton />;
-  }
+  if (isLoadingUser || isLoading) return <DashboardSkeleton />;
 
   if (!user) {
     return (
@@ -295,26 +316,36 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
         <div className="matcha-empty__icon">{Icons.chart}</div>
         <h3 className="matcha-empty__title">Akses Terbatas</h3>
         <p className="matcha-empty__text">Silakan login untuk melihat dashboard.</p>
-        <Link href="/login" className="matcha-btn matcha-btn--primary">Login</Link>
+        <Link href="/login" className="matcha-btn matcha-btn--primary">
+          Login
+        </Link>
       </div>
     );
   }
 
-  const metrics = data?.metrics || { ordersToday: 0, revenue: 0, topDish: "-", totalCustomers: 0, avgOrderValue: 0, pendingOrders: 0 };
+  const metrics = data?.metrics || {
+    ordersToday: 0,
+    revenue: 0,
+    topDish: "-",
+    totalCustomers: 0,
+    avgOrderValue: 0,
+    pendingOrders: 0,
+  };
+
   const orders = data?.recentOrders || [];
   const popular = data?.popularItems || [];
 
   return (
     <div className="dashboard-page">
-      {/* Welcome Section */}
       <section className="dashboard-welcome animate-fade-in">
         <div className="dashboard-welcome__content">
           <h1>Selamat datang, {user.name}! 👋</h1>
           <p>Berikut ringkasan bisnis Serba Matcha hari ini.</p>
         </div>
+
         <div className="dashboard-welcome__actions">
-          <button 
-            onClick={() => fetchData(activeTab, true)} 
+          <button
+            onClick={() => fetchData(activeTab, true)}
             className={`matcha-btn matcha-btn--secondary ${isRefreshing ? "is-refreshing" : ""}`}
             disabled={isRefreshing}
           >
@@ -324,7 +355,6 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
         </div>
       </section>
 
-      {/* Stats Grid */}
       <section className="matcha-grid matcha-grid--4 animate-fade-in animate-delay-1">
         <StatCard icon={Icons.orders} label="Orders Hari Ini" value={metrics.ordersToday} trend="up" trendValue="+12%" />
         <StatCard icon={Icons.revenue} label="Revenue" value={formatCurrency(metrics.revenue)} trend="up" trendValue="+8%" />
@@ -332,12 +362,14 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
         <StatCard icon={Icons.clock} label="Pending Orders" value={metrics.pendingOrders || 0} />
       </section>
 
-      {/* Main Content Grid */}
       <div className="dashboard-main-grid animate-fade-in animate-delay-2">
-        {/* Chart Section */}
         <div className="matcha-card">
           <div className="matcha-card__header">
-            <h3><span className="matcha-card__header-icon">{Icons.chart}</span>Revenue Overview</h3>
+            <h3>
+              <span className="matcha-card__header-icon">{Icons.chart}</span>
+              Revenue Overview
+            </h3>
+
             <div className="chart-period-tabs">
               {(["week", "month", "year"] as const).map((tab) => (
                 <button
@@ -354,6 +386,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
               {isChartLoading && <span className="chart-loading-indicator">⏳</span>}
             </div>
           </div>
+
           <div className="matcha-card__body">
             <div className="chart-container">
               <canvas ref={canvasRef} />
@@ -361,10 +394,12 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="matcha-card">
           <div className="matcha-card__header">
-            <h3><span className="matcha-card__header-icon">{Icons.star}</span>Quick Actions</h3>
+            <h3>
+              <span className="matcha-card__header-icon">{Icons.star}</span>
+              Quick Actions
+            </h3>
           </div>
           <div className="matcha-card__body">
             <div className="quick-actions">
@@ -377,14 +412,18 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
         </div>
       </div>
 
-      {/* Bottom Grid */}
       <div className="dashboard-bottom-grid animate-fade-in animate-delay-3">
-        {/* Recent Orders */}
         <div className="matcha-card">
           <div className="matcha-card__header">
-            <h3><span className="matcha-card__header-icon">{Icons.orders}</span>Recent Orders</h3>
-            <Link href="/settings" className="matcha-btn matcha-btn--ghost matcha-btn--sm">View All</Link>
+            <h3>
+              <span className="matcha-card__header-icon">{Icons.orders}</span>
+              Recent Orders
+            </h3>
+            <Link href="/settings" className="matcha-btn matcha-btn--ghost matcha-btn--sm">
+              View All
+            </Link>
           </div>
+
           <div className="matcha-card__body" style={{ padding: 0 }}>
             {orders.length > 0 ? (
               <table className="matcha-table">
@@ -419,11 +458,14 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           </div>
         </div>
 
-        {/* Popular Items */}
         <div className="matcha-card">
           <div className="matcha-card__header">
-            <h3><span className="matcha-card__header-icon">{Icons.star}</span>Menu Populer</h3>
+            <h3>
+              <span className="matcha-card__header-icon">{Icons.star}</span>
+              Menu Populer
+            </h3>
           </div>
+
           <div className="matcha-card__body">
             {popular.length > 0 ? (
               <div className="popular-items">
@@ -432,10 +474,17 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
                     <div className="popular-item__rank">#{idx + 1}</div>
                     <div className="popular-item__info">
                       <div className="popular-item__name">{item.name}</div>
-                      <div className="popular-item__stats">{item.orders} orders • {formatCurrency(item.revenue)}</div>
+                      <div className="popular-item__stats">
+                        {item.orders} orders • {formatCurrency(item.revenue)}
+                      </div>
                     </div>
                     <div className="popular-item__bar">
-                      <div className="popular-item__bar-fill" style={{ width: `${(item.orders / (popular[0]?.orders || 1)) * 100}%` }} />
+                      <div
+                        className="popular-item__bar-fill"
+                        style={{
+                          width: `${(item.orders / (popular[0]?.orders || 1)) * 100}%`,
+                        }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -456,6 +505,20 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           display: flex;
           flex-direction: column;
           gap: 24px;
+        }
+
+        /* ✅ Fix ALL SVG sizing here */
+        .matcha-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          line-height: 0;
+        }
+        .matcha-icon :global(svg) {
+          width: 100%;
+          height: 100%;
+          display: block;
         }
 
         .dashboard-welcome {
@@ -488,21 +551,25 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
         .dashboard-welcome__actions .matcha-btn:hover {
           background: rgba(255, 255, 255, 0.3);
         }
-        
+
         .refresh-icon {
           display: inline-flex;
           transition: transform 0.3s ease;
         }
-        
+
         .refresh-icon.spinning {
           animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
         }
-        
+
         .matcha-btn.is-refreshing {
           opacity: 0.8;
         }
@@ -524,13 +591,13 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           position: relative;
         }
 
-        /* Modern Period Tabs */
         .chart-period-tabs {
           display: flex;
           background: var(--hover-bg);
           padding: 4px;
           border-radius: 12px;
           gap: 4px;
+          align-items: center;
         }
 
         .chart-period-tab {
@@ -548,7 +615,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
         }
 
         .chart-period-tab::before {
-          content: '';
+          content: "";
           position: absolute;
           inset: 0;
           background: linear-gradient(135deg, var(--matcha-400), var(--matcha-600));
@@ -575,6 +642,20 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           z-index: 1;
         }
 
+        /* ✅ Make header icon not push layout */
+        .matcha-card__header h3 {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 0;
+        }
+
+        .matcha-card__header-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
         .popular-items {
           display: flex;
           flex-direction: column;
@@ -598,6 +679,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           justify-content: center;
           font-weight: 700;
           font-size: 0.8rem;
+          flex-shrink: 0;
         }
 
         :global(body.dark) .popular-item__rank {
@@ -627,6 +709,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           background: var(--hover-bg);
           border-radius: 3px;
           overflow: hidden;
+          flex-shrink: 0;
         }
 
         .popular-item__bar-fill {
@@ -659,7 +742,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
   );
 }
 
-// Skeleton Loading
+// Skeleton
 function DashboardSkeleton() {
   return (
     <div className="dashboard-page">

@@ -23,10 +23,10 @@ export default async function AdminUsersPage({
   searchParams?: { q?: string; page?: string };
 }) {
   const session = await getSessionPayloadFromNextCookies();
-  if (!session) redirect("/login");
+  if (!session) redirect("admin_dashboard/login");
 
   const me = await findUserById(session.sub);
-  if (!me) redirect("/login");
+  if (!me) redirect("admin_dashboard/login");
 
   await bootstrapAdminIfNeeded();
   await ensureDefaultAdminPermissions();
@@ -35,7 +35,7 @@ export default async function AdminUsersPage({
   if (!ok) {
     // Keep behavior consistent with client pages: show message after hydration.
     // But for server render, simplest is redirect to /dashboard.
-    redirect("/dashboard");
+    redirect("admin_dashboard/dashboard");
   }
 
   const qRaw = (searchParams?.q ?? "").trim();

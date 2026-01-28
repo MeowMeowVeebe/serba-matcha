@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
           <span />
         </div>
 
-        <Link href="/login" className="auth-secondary-link">
+        <Link href="admin_dashboard/login" className="auth-secondary-link">
           Ke halaman Login
         </Link>
       </form>
