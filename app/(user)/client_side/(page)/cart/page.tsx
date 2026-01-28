@@ -2,40 +2,138 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-type CartItem = {
+type Product = {
   id: string;
   name: string;
   price: number;
-  qty: number;
+  stock: number;
+  category: string;
+  description: string;
   image: string;
-  variant: string;
 };
 
-const initialItems: CartItem[] = [
-  { id: "m1", name: "Iced Matcha Latte", price: 38000, qty: 2, image: "/matcha-tea.png", variant: "Less sweet" },
-  { id: "c1", name: "Dirty Matcha", price: 42000, qty: 1, image: "/leaf.png", variant: "Oat milk" },
-  { id: "f1", name: "Matcha Basque Cheesecake", price: 48000, qty: 1, image: "/trust.png", variant: "Slice" },
-];
+type CartLine = {
+  productId: string;
+  qty: number;
+  snapshot?: { name: string; price: number; image: string; category: string };
+};
+
+const readCartSafe = (): CartLine[] => {
+  try {
+    const raw = JSON.parse(localStorage.getItem("cart-items") || "[]");
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+};
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>(initialItems);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartLine[]>([]);
   const [shipping, setShipping] = useState<"pickup" | "express" | "standard">("standard");
+  const [loading, setLoading] = useState(true);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [cartHydrated, setCartHydrated] = useState(false);
 
-  const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.price * i.qty, 0),
-    [items]
-  );
+  // Load products and cart
+  useEffect(() => {
+    const loadCart = () => {
+      setCart(readCartSafe());
+    };
+    loadCart();
+    setCartHydrated(true);
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "cart-items") loadCart();
+    };
+    const onCartUpdated = () => loadCart();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("cart-updated", onCartUpdated);
+
+    fetch("/api/seller/products")
+      .then((res) => res.json())
+      .then((json) => setProducts(json.products || []))
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false));
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("cart-updated", onCartUpdated);
+    };
+  }, []);
+
+  // Persist cart
+  useEffect(() => {
+    if (!cartHydrated) return;
+    localStorage.setItem("cart-items", JSON.stringify(cart));
+  }, [cart, cartHydrated]);
+
+  const itemsDetailed = useMemo(() => {
+    return cart
+      .map((line) => {
+        const p = products.find((x) => x.id === line.productId);
+        if (p) return { ...p, qty: line.qty };
+        if (line.snapshot) {
+          return {
+            id: line.productId,
+            stock: 0,
+            description: "",
+            ...line.snapshot,
+            qty: line.qty,
+          };
+        }
+        return {
+          id: line.productId,
+          name: "Produk tidak tersedia",
+          price: 0,
+          stock: 0,
+          category: "-",
+          description: "",
+          image: "/logo/serbamatcha.png",
+          qty: line.qty,
+        } as Product & { qty: number };
+      });
+  }, [cart, products]);
+
+  const subtotal = useMemo(() => itemsDetailed.reduce((sum, i) => sum + i.price * i.qty, 0), [itemsDetailed]);
   const shippingCost = shipping === "pickup" ? 0 : shipping === "express" ? 15000 : 8000;
   const total = subtotal + shippingCost;
 
   const updateQty = (id: string, delta: number) => {
-    setItems((prev) =>
+    setCart((prev) =>
       prev
-        .map((item) => (item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item))
-        .filter((item) => item.qty > 0)
+        .map((line) => (line.productId === id ? { ...line, qty: Math.max(1, line.qty + delta) } : line))
+        .filter((line) => line.qty > 0)
     );
+  };
+
+  const removeItem = (id: string) => {
+    setCart((prev) => prev.filter((line) => line.productId !== id));
+  };
+
+  const handleCheckout = async () => {
+    if (itemsDetailed.length === 0) return;
+    setCheckingOut(true);
+    try {
+      await Promise.all(
+        itemsDetailed.map((item) =>
+          fetch("/api/transactions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: item.id, productName: item.name, price: item.price }),
+          })
+        )
+      );
+      setCart([]);
+      localStorage.setItem("cart-items", "[]");
+      alert("Checkout berhasil! Terima kasih.");
+    } catch (e) {
+      alert("Checkout gagal. Coba lagi.");
+    } finally {
+      setCheckingOut(false);
+    }
   };
 
   return (
@@ -49,7 +147,7 @@ export default function CartPage() {
               <p className="text-green-800/70">Secure payment, quick pickup, and handcrafted drinks.</p>
             </div>
             <Link
-              href="/client_side/shopping"
+              href="/client_side/menu"
               className="rounded-full bg-[#0C3B2E] px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#127246] transition"
             >
               Continue shopping
@@ -59,7 +157,9 @@ export default function CartPage() {
 
         <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
           <section className="space-y-4">
-            {items.map((item) => (
+            {loading ? (
+              <div className="rounded-2xl bg-white p-4 shadow-md ring-1 ring-black/5">Loading...</div>
+            ) : itemsDetailed.map((item) => (
               <article
                 key={item.id}
                 className="flex gap-4 rounded-2xl bg-white p-4 shadow-md ring-1 ring-black/5 md:items-center"
@@ -71,10 +171,11 @@ export default function CartPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-semibold text-green-900">{item.name}</h3>
-                      <p className="text-sm text-green-800/70">Variant: {item.variant}</p>
+                      <p className="text-sm text-green-800/70">Kategori: {item.category}</p>
+                      {item.stock <= 0 && <p className="text-xs text-red-600">Stok habis</p>}
                     </div>
                     <button
-                      onClick={() => setItems((prev) => prev.filter((i) => i.id !== item.id))}
+                      onClick={() => removeItem(item.id)}
                       className="text-sm text-red-500 hover:text-red-600"
                     >
                       Remove
@@ -88,7 +189,7 @@ export default function CartPage() {
                         className="h-7 w-7 rounded-full bg-white text-green-900 shadow hover:bg-green-100"
                         aria-label="Decrease quantity"
                       >
-                        âˆ’
+                        -
                       </button>
                       <span className="w-6 text-center font-semibold text-green-900">{item.qty}</span>
                       <button
@@ -111,9 +212,9 @@ export default function CartPage() {
               </article>
             ))}
 
-            {items.length === 0 && (
+            {!loading && itemsDetailed.length === 0 && (
               <div className="rounded-2xl border border-dashed border-green-200 bg-white p-8 text-center text-green-800">
-                Cart is empty. <Link href="/client_side/shopping" className="font-semibold text-green-900 underline">Browse drinks</Link>
+                Cart is empty. <Link href="/client_side/menu" className="font-semibold text-green-900 underline">Browse menu</Link>
               </div>
             )}
           </section>
@@ -160,37 +261,52 @@ export default function CartPage() {
               </div>
             </div>
 
-            <button className="w-full rounded-full bg-[#0C3B2E] px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#127246]">
-              Proceed to Checkout
+            <button
+              onClick={handleCheckout}
+              disabled={checkingOut || itemsDetailed.length === 0}
+              className="w-full rounded-full bg-[#0C3B2E] px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#127246] disabled:opacity-60"
+            >
+              {checkingOut ? "Processing..." : "Proceed to Checkout"}
             </button>
 
             <p className="text-xs text-green-800/70">Secure payments powered by your favorite wallets.</p>
           </aside>
         </div>
 
-        <section className="rounded-3xl bg-white p-5 shadow-lg ring-1 ring-black/5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-green-900">Recommended for you</h3>
-            <Link href="/client_side/menu" className="text-sm font-semibold text-[#0C3B2E] hover:underline">
-              See full menu
-            </Link>
-          </div>
+        {!loading && products.length > 0 && (
+          <section className="rounded-3xl bg-white p-5 shadow-lg ring-1 ring-black/5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-green-900">Recommended for you</h3>
+              <Link href="/client_side/menu" className="text-sm font-semibold text-[#0C3B2E] hover:underline">
+                See full menu
+              </Link>
+            </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {["Genmaicha Cold Brew", "Hojicha Latte", "Matcha Tumbler"].map((name, idx) => (
-              <div key={name} className="flex items-center gap-3 rounded-xl border border-green-100 bg-green-50/50 p-3">
-                <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-white">
-                  <Image src={idx === 2 ? "/logo/serbamatcha.png" : "/matcha-tea.png"} alt={name} fill className="object-contain p-2" />
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {products.slice(0, 3).map((p) => (
+                <div key={p.id} className="flex items-center gap-3 rounded-xl border border-green-100 bg-green-50/50 p-3">
+                  <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-white">
+                    <Image src={p.image} alt={p.name} fill className="object-contain p-2" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-green-900">{p.name}</p>
+                    <p className="text-xs text-green-800/70">Rp {p.price.toLocaleString("id-ID")}</p>
+                  </div>
+                  <button
+                    className="text-sm font-semibold text-[#0C3B2E]"
+                    onClick={() => setCart((prev) => {
+                      const found = prev.find((line) => line.productId === p.id);
+                      if (found) return prev.map((line) => line.productId === p.id ? { ...line, qty: line.qty + 1 } : line);
+                      return [...prev, { productId: p.id, qty: 1 }];
+                    })}
+                  >
+                    +
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-green-900">{name}</p>
-                  <p className="text-xs text-green-800/70">Add for Rp {(30000 + idx * 5000).toLocaleString("id-ID")}</p>
-                </div>
-                <button className="text-sm font-semibold text-[#0C3B2E]">+</button>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );

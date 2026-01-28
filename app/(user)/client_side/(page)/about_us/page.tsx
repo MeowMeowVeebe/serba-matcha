@@ -48,7 +48,7 @@ export default function about_us() {
 
                 <section className="relative w-[1300px] h-[700px] bg-blue-500">
                     <Image
-                        src="/teamgroup.jpg"
+                        src="/team_group.png"
                         alt="Test"
                         fill
                         className="object-cover"

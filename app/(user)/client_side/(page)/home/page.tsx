@@ -92,7 +92,7 @@ export default function homepage() {
         <div className="mt-8 flex justify-center gap-4">
 
           <Link
-            href="/about_us"
+            href="/client_side/about_us"
             className="rounded-full border border-green-600 px-6 py-3 text-green-700 font-medium hover:bg-green-100 transition"
           >
             About us

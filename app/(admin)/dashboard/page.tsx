@@ -11,7 +11,6 @@ type DashboardData = {
     ordersToday: number;
     revenue: number;
     topDish: string;
-    totalCustomers: number;
     avgOrderValue: number;
     pendingOrders: number;
   };
@@ -327,7 +326,6 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
     ordersToday: 0,
     revenue: 0,
     topDish: "-",
-    totalCustomers: 0,
     avgOrderValue: 0,
     pendingOrders: 0,
   };
@@ -357,8 +355,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
 
       <section className="matcha-grid matcha-grid--4 animate-fade-in animate-delay-1">
         <StatCard icon={Icons.orders} label="Orders Hari Ini" value={metrics.ordersToday} trend="up" trendValue="+12%" />
-        <StatCard icon={Icons.revenue} label="Revenue" value={formatCurrency(metrics.revenue)} trend="up" trendValue="+8%" />
-        <StatCard icon={Icons.customers} label="Total Customers" value={metrics.totalCustomers || 0} trend="neutral" trendValue="Stabil" />
+        <StatCard icon={Icons.revenue} label="Total Spending" value={formatCurrency(metrics.revenue)} trend="up" trendValue="+8%" />
         <StatCard icon={Icons.clock} label="Pending Orders" value={metrics.pendingOrders || 0} />
       </section>
 
@@ -404,7 +401,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           <div className="matcha-card__body">
             <div className="quick-actions">
               <QuickAction href="/settings" icon={Icons.orders} label="Kelola Menu" />
-              <QuickAction href="/settings" icon={Icons.customers} label="Customers" />
+              <QuickAction href="/settings" icon={Icons.customers} label="Profile Settings" />
               <QuickAction href="/security" icon={Icons.trending} label="Reports" />
               <QuickAction href="/settings" icon={Icons.star} label="Promo" />
             </div>

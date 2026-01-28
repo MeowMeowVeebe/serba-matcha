@@ -1,20 +1,10 @@
 "use client";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/useUser";
-
-
-const linkClass = (showBg: boolean) =>
-  `font-medium transition-colors ${showBg
-    ? "text-[#22b982] hover:text-[#49e4ab]"
-    : "text-white hover:text-white/80"
-  }`;
-
-
 
 export default function Header() {
   const [showBg, setShowBg] = useState(false);
@@ -25,117 +15,66 @@ export default function Header() {
   const { user } = useUser();
 
   useEffect(() => {
-
-    if (pathname !== "/home") {
+    if (!isHome) {
       setShowBg(true);
-
-
       return;
     }
     const hero = document.getElementById("hero");
-
     const handleScroll = () => {
       if (!hero) return;
-      const bottom = hero.getBoundingClientRect().bottom;
-
-      setShowBg(bottom <= 80);
+      setShowBg(hero.getBoundingClientRect().bottom <= 80);
     };
-
     handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [pathname]);
+  }, [isHome]);
 
   return (
     <motion.header
-
       className={`fixed top-0 z-[100] w-full py-3 font-['Montserrat-Semibold'] card-header ${
         isHome ? "flex justify-center" : "flex sticky justify-center"
       }`}
       animate={{
         backgroundColor: showBg ? "#06402B" : "rgba(148,219,148,0)",
-
         backdropFilter: showBg ? "blur(12px)" : "blur(0px)",
       }}
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
-
       <div className="flex w-full max-w-6xl items-center justify-between px-4 sm:px-6 py-3 text-lg sm:text-xl">
+        <motion.header
+          className="absolute hidden h-full w-full max-w-6xl border-b-3 border-white top-3 pointer-events-none md:flex"
+          animate={{ opacity: showBg ? 0 : 1 }}
+        />
 
-        <motion.header className="absolute hidden h-full w-full max-w-6xl border-b-3 border-white top-3 pointer-events-none md:flex"
-          animate={{
-            opacity: showBg ? 0 : 1,
-          }}
+        <Link
+          href="/client_side"
+          className={`text-2xl font-medium transition-colors ${
+            showBg ? "text-[#22b982] hover:text-green-900" : "text-white hover:text-white/80"
+          }`}
         >
-
-
-
-        </motion.header>
-
-        {/* Logo */}
-        <Link href="/client_side" className={`text-2xl font-medium transition-colors ${showBg ? "text-[#22b982] hover:text-green-900" : "text-white hover:text-white/80"
-          }`}>
           Serba Matcha
         </Link>
 
-        {/* Navigation */}
-        {/* Desktop nav */}
         <nav className="hidden items-center gap-6 lg:gap-8 md:flex flex justify-between">
-          <Link
-            href="/client_side/home"
-            className="relative group font-medium text-white"
-          >
-            Home
-            <span
-              className="
-      absolute left-0 -bottom-1
-      h-[2px] bg-white
-      w-0
-      transition-all duration-300
-      group-hover:w-full
-    "
-            />
-          </Link>
-
-
-          <Link href="/client_side/our_team" className='relative group  font medium text-white'>
-            Our Teams
-
-            <span
-              className="
-      absolute left-0 -bottom-1
-      h-[2px] bg-white
-      w-0
-      transition-all duration-300
-      group-hover:w-full
-    "
-            />          </Link>
-          <Link href="/client_side/about_us" className='relative group  font medium text-white'>
-            About
-            <span
-              className="
-      absolute left-0 -bottom-1
-      h-[2px] bg-white
-      w-0
-      transition-all duration-300
-      group-hover:w-full
-    "
-            />
-          </Link>
-
-          <Link href="/client_side/menu" className='relative group  font medium text-white'>
-            Menu
-
-            <span
-              className="
-      absolute left-0 -bottom-1
-      h-[2px] bg-white
-      w-0
-      transition-all duration-300
-      group-hover:w-full
-    "
-            />          </Link>
-
+          {[
+            { href: "/client_side/home", label: "Home" },
+            { href: "/client_side/our_team", label: "Our Teams" },
+            { href: "/client_side/about_us", label: "About" },
+            { href: "/client_side/menu", label: "Menu" },
+          ].map((item) => (
+            <Link key={item.href} href={item.href} className="relative group font-medium text-white">
+              {item.label}
+              <span
+                className="
+                  absolute left-0 -bottom-1
+                  h-[2px] bg-white
+                  w-0
+                  transition-all duration-300
+                  group-hover:w-full
+                "
+              />
+            </Link>
+          ))}
         </nav>
 
         <nav className="flex flex-row items-center gap-2 sm:gap-3">
@@ -168,72 +107,56 @@ export default function Header() {
             )}
           </div>
 
-          <div className="hidden sm:block w-px h-6 bg-white"></div>
+          <div className="hidden sm:block w-px h-6 bg-white" />
 
           <div>
             <Link href="/client_side/cart">
               <div className="flex flex-column items-center">
-                <img
-                  src="/cart.png"
-                  alt="Cart"
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full"
-                />
+                <img src="/cart.png" alt="Cart" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full" />
                 <p className="text-xs sm:text-sm text-white"> Cart</p>
               </div>
             </Link>
-
           </div>
-
-
         </nav>
 
-
-        {/* Mobile dropdown (shown on small screens) */}
         <div className="md:hidden">
           <DropdownMenu.Root>
             <DropdownMenu.Trigger
-              className={`inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm ${showBg
-                ? "border-green-700/30 text-green-900 bg-white/40"
-                : "border-white/40 text-white bg-black/10"
-                }`}
+              className={`inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm ${
+                showBg ? "border-green-700/30 text-green-900 bg-white/40" : "border-white/40 text-white bg-black/10"
+              }`}
               aria-label="Open menu"
             >
-              ☰
+              {"\u2630"}
             </DropdownMenu.Trigger>
 
             <DropdownMenu.Portal>
               <DropdownMenu.Content
                 sideOffset={1}
                 align="end"
-                className={`min-w-[180px] z-100 rounded-xl p-2 shadow-lg backdrop-blur border ${showBg
-                  ? "bg-white border-green-200 text-green-900"
-                  : "bg-black/40 border-white/20 text-white"
-                  }`}
+                className={`min-w-[180px] z-100 rounded-xl p-2 shadow-lg backdrop-blur border ${
+                  showBg ? "bg-white border-green-200 text-green-900" : "bg-black/40 border-white/20 text-white"
+                }`}
               >
-                <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
-                  <Link href="/client_side/home">Home</Link>
-                </DropdownMenu.Item>
-
-                <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
-                  <Link href="/client_side/our_team">Our Team</Link>
-                </DropdownMenu.Item>
-
-                <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
-                  <Link href="/client_side/about_us">About</Link>
-                </DropdownMenu.Item>
-
-                <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
-                  <Link href="/client_side/menu">Menu</Link>
-                </DropdownMenu.Item>
-
-                <DropdownMenu.Item className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10">
-                  <Link href="/client_side/cart">Cart</Link>
-                </DropdownMenu.Item>
+                {[
+                  { href: "/client_side/home", label: "Home" },
+                  { href: "/client_side/our_team", label: "Our Team" },
+                  { href: "/client_side/about_us", label: "About" },
+                  { href: "/client_side/menu", label: "Menu" },
+                  { href: "/dashboard/transactions", label: "Transactions" },
+                  { href: "/client_side/cart", label: "Cart" },
+                ].map((item) => (
+                  <DropdownMenu.Item
+                    key={item.href}
+                    className="rounded-lg px-3 py-2 text-sm outline-none hover:bg-white/10"
+                  >
+                    <Link href={item.href}>{item.label}</Link>
+                  </DropdownMenu.Item>
+                ))}
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
         </div>
-
       </div>
     </motion.header>
   );

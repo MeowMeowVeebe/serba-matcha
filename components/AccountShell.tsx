@@ -166,6 +166,18 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
             ),
           },
           {
+            href: "/dashboard/transactions",
+            label: "Transactions",
+            icon: (
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+                <path
+                  fill="currentColor"
+                  d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z"
+                />
+              </svg>
+            ),
+          },
+          {
             href: "/settings",
             label: "Settings",
             icon: (
@@ -201,6 +213,17 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
             { href: "/admin/users", label: "Users", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"/></svg> },
             { href: "/admin/rbac", label: "RBAC", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg> },
             { href: "/admin/audit-logs", label: "Audit Logs", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> },
+          ],
+        });
+      }
+
+      // Seller tools (separate from admin)
+      if (isAdmin || user?.roles?.some((r) => r.toLowerCase() === "seller" || r.toLowerCase() === "penjual")) {
+        sections.push({
+          title: "Seller",
+          items: [
+            { href: "/seller/dashboard", label: "Seller Dashboard", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M3 5h18v4H3V5zm0 6h18v8H3v-8zm2 2v4h14v-4H5z"/></svg> },
+            { href: "/seller/products", label: "Products", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M3 4h18v2H3V4zm0 4h18v12H3V8zm2 2v8h14v-8H5zm3 1h4v2H8v-2z"/></svg> },
           ],
         });
       }

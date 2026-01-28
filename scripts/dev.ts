@@ -46,9 +46,8 @@ function main() {
     cleanupNextLock();
   }
 
-  // Ensure DB schema exists (SQLite dev)
-  // Safe to run repeatedly; deploy is a no-op when migrations are already applied.
-  run("npx", ["prisma", "migrate", "deploy"]);
+  // Ensure DB schema exists (now targeting MySQL, no migration history)
+  run("npx", ["prisma", "db", "push"]);
 
   // Start Next dev (forward args)
   const args = ["next", "dev", ...process.argv.slice(2)];

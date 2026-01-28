@@ -44,9 +44,9 @@ export default function Footer() {
             </div>
           </div>
 
-          <div>
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#9bc8af]">Connect</p>
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col align-center">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-[#9bc8af] text-center">Connect</p>
+            <div className="flex items-center justify-center gap-4">
               {socials.map((s) => (
                 <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" className="group">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition group-hover:-translate-y-1 group-hover:bg-white/20">
@@ -55,7 +55,7 @@ export default function Footer() {
                 </a>
               ))}
             </div>
-            <p className="mt-3 text-sm text-[#c6d7cd]">Mon–Sun, 8am–10pm | Jakarta</p>
+
           </div>
         </div>
 

@@ -6,8 +6,8 @@ import "@/styles/matcha-design-system.css";
 import "@/styles/datatable.css";
 
 export const metadata = {
-  title: "Serba Matcha - Admin Dashboard",
-  description: "Secure admin dashboard with RBAC and audit logging",
+  title: "Serba Matcha - User Dashboard",
+  description: "Personal dashboard for Serba Matcha users",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
