@@ -1,6 +1,7 @@
 "use client";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
@@ -48,11 +49,14 @@ export default function Header() {
 
         <Link
           href="/client_side"
-          className={`text-2xl font-medium transition-colors ${
-            showBg ? "text-[#22b982] hover:text-green-900" : "text-white hover:text-white/80"
-          }`}
+          className="text-white hover:text-white/80"
         >
+
+<div className="flex flex-row items-center gap-2"> 
+           <Image src="/logo/logo-cat.png" alt="Serba Matcha Logo" width={60} height={60} />
+
           Serba Matcha
+          </div>
         </Link>
 
         <nav className="hidden items-center gap-6 lg:gap-8 md:flex flex justify-between">
