@@ -3,9 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 const socials = [
-  { name: "Instagram", href: "https://instagram.com/serbamatcha", icon: "/instagram.png" },
-  { name: "Facebook", href: "https://facebook.com/serbamatcha", icon: "/facebook.png" },
-  { name: "TikTok", href: "https://tiktok.com/@serbamatcha", icon: "/tiktok.png" },
+  { name: "Instagram", href: "https://instagram.com/serbamatcha", icon: "/logo/instagram.png" },
+  { name: "Facebook", href: "https://facebook.com/serbamatcha", icon: "/logo/facebook.png" },
+  { name: "TikTok", href: "https://tiktok.com/@serbamatcha", icon: "/logo/tiktok.png" },
 ];
 
 const quickLinks = [
@@ -17,7 +17,7 @@ const quickLinks = [
 
 export default function Footer() {
   return (
-    <footer className="mt-16 bg-[#0F1A14] text-[#d7e6dd]">
+    <footer className="mt-16 bg-[#1A1A1A] text-[#d7e6dd]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-5 py-12 sm:px-8 md:px-10">
         <div className="grid gap-8 md:grid-cols-[1.2fr_1fr_1fr]">
           <div className="space-y-3">
