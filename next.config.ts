@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+<<<<<<< HEAD
   // Performance optimizations
   reactStrictMode: true,
   poweredByHeader: false,
@@ -98,6 +99,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+=======
+  /* config options here */
+>>>>>>> origin
 };
 
 export default nextConfig;

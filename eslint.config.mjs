@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
 
+
     // Project ignores:
     "coverage/**",
     "node_modules/**",
@@ -26,6 +27,7 @@ const eslintConfig = defineConfig([
     "scripts/**",
     "public/sw.js",
     "types/**",
+
   ]),
 ]);
 
