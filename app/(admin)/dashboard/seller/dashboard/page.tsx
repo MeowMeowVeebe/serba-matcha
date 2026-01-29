@@ -234,7 +234,7 @@ function SellerDashboard() {
                   <div className="sd-row__left">
                     <div className="sd-row__title">{t.productName}</div>
                     <div className="sd-row__meta">
-                      {new Date(t.createdAt).toLocaleString("id-ID")} • #{t.id.slice(0, 8)}
+                      {new Date(t.createdAt).toLocaleString("id-ID")} - #{t.id.slice(0, 8)}
                     </div>
                   </div>
                   <div className="sd-row__right">{formatCurrency(t.price)}</div>

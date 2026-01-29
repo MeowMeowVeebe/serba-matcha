@@ -164,7 +164,20 @@ export async function GET(req: Request) {
     });
 
     if (totalOrders === 0) {
-      return NextResponse.json({ success: true, ...getEmptyData(period) });
+      const chart = emptyChart(period);
+      return NextResponse.json({
+        success: true,
+        metrics: {
+          ordersToday: 0,
+          revenue: 0,
+          topDish: "-",
+          avgOrderValue: 0,
+          pendingOrders: 0,
+        },
+        recentOrders: [],
+        chart,
+        popularItems: [],
+      });
     }
 
     const ordersToday = await prisma.transaction.count({

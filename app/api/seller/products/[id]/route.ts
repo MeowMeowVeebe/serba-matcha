@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/server/prisma";
 
-type Params = { params: { id: string } };
+type ParamsPromise = { params: Promise<{ id: string }> };
 
-export async function PATCH(req: Request, { params }: Params) {
-  const id = params.id;
+export async function PATCH(req: NextRequest, { params }: ParamsPromise) {
+  const { id } = await params;
+  if (!id) return NextResponse.json({ error: "Missing product id" }, { status: 400 });
+
   const body = await req.json();
   const { name, price, stock, category, description, image } = body;
   const product = await prisma.sellerProduct.update({
@@ -21,13 +23,8 @@ export async function PATCH(req: Request, { params }: Params) {
   return NextResponse.json({ product });
 }
 
-export async function DELETE(req: Request, { params }: Params) {
-  // Guard: try both params and URL parsing to be resilient to routing edge cases
-  let id = params?.id;
-  if (!id) {
-    const pathParts = new URL(req.url).pathname.split("/").filter(Boolean);
-    id = pathParts[pathParts.length - 1];
-  }
+export async function DELETE(req: NextRequest, { params }: ParamsPromise) {
+  const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: "Missing product id" }, { status: 400 });
   }

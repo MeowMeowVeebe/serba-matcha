@@ -13,7 +13,7 @@ const isAdminUser = (user: any) => {
   if (roleField.includes("admin")) return true;
 
   const roles = Array.isArray(user.roles) ? user.roles : [];
-  return roles.some((r) => {
+  return roles.some((r: any) => {
     if (typeof r === "string") return norm(r).includes("admin");
     if (r && typeof r.name === "string") return norm(r.name).includes("admin");
     return false;
@@ -164,7 +164,7 @@ function SellerProducts() {
     } catch (e) {
       showAlert(
         e instanceof Error ? e.message : "Tidak bisa menghapus produk. Coba lagi.",
-        { variant: "danger" }
+        { variant: "error" }
       );
     }
   };
