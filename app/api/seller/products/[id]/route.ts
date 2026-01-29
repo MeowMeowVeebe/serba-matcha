@@ -21,9 +21,27 @@ export async function PATCH(req: Request, { params }: Params) {
   return NextResponse.json({ product });
 }
 
-export async function DELETE(_req: Request, { params }: Params) {
-  const id = params.id;
-  await prisma.transaction.deleteMany({ where: { productId: id } });
-  await prisma.sellerProduct.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+export async function DELETE(req: Request, { params }: Params) {
+  // Guard: try both params and URL parsing to be resilient to routing edge cases
+  let id = params?.id;
+  if (!id) {
+    const pathParts = new URL(req.url).pathname.split("/").filter(Boolean);
+    id = pathParts[pathParts.length - 1];
+  }
+  if (!id) {
+    return NextResponse.json({ error: "Missing product id" }, { status: 400 });
+  }
+  try {
+    // Clean dependent rows first to avoid FK issues
+    await prisma.transaction.updateMany({
+      where: { productId: id },
+      data: { productId: null },
+    });
+    await prisma.sellerProduct.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e: any) {
+    const message =
+      typeof e?.message === "string" ? e.message : "Gagal menghapus produk karena constraint database.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

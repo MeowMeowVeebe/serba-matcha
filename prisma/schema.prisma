@@ -8,51 +8,52 @@ datasource db {
 }
 
 model User {
-  id           String               @id @default(cuid())
-  email        String               @unique
-  name         String
-  phone        String?
-  avatar       String?              @db.LongText // allow large blobs (data URLs / binary-encoded)
-  passwordAlgo String
-  passwordIter Int
-  passwordSalt String
-  passwordHash String
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-
+  id            String               @id @default(cuid())
+  email         String               @unique
+  name          String
+  role          UserSimpleRole       @default(customer)
+  phone         String?
+  avatar        String?              @db.LongText
+  passwordAlgo  String
+  passwordIter  Int
+  passwordSalt  String
+  passwordHash  String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
   resetTokens   PasswordResetToken[]
   refreshTokens RefreshToken[]
   roles         UserRole[]
+  transactions  Transaction[]
 
-  // Common access patterns:
-  // - Admin user list sorted by createdAt desc
-  // - Lookups by email already covered by @unique
   @@index([createdAt])
 }
 
-model PasswordResetToken {
-  id          String   @id @default(cuid())
-  userId      String
-  tokenHash   String   @unique
-  expiresAt   DateTime
-  consumedAt  DateTime?
-  createdAt   DateTime @default(now())
+enum UserSimpleRole {
+  admin
+  customer
+}
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
 }
 
 model RefreshToken {
-  id         String   @id @default(cuid())
-  userId     String
-  tokenHash  String   @unique
-  expiresAt  DateTime
-  revokedAt  DateTime?
-  createdAt  DateTime @default(now())
-
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -68,30 +69,21 @@ model RateLimitEvent {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  userId    String?
-  ip        String?
-
-  // Materialized fields extracted from meta for faster filtering/search (optional)
+  id           String   @id @default(cuid())
+  action       String
+  userId       String?
+  ip           String?
   targetUserId String?
   targetEmail  String?
   resource     String?
   statusCode   Int?
+  meta         String?
+  metaPreview  String?
+  createdAt    DateTime @default(now())
 
-  // JSON string (full meta). Not always returned in list payload.
-  meta       String?
-  metaPreview String? // short preview string for list views
-
-  createdAt DateTime @default(now())
-
-  // Common access patterns:
-  // - Admin audit log list sorted by createdAt desc
-  // - Filter by action/userId
   @@index([createdAt])
   @@index([action, createdAt])
   @@index([userId, createdAt])
-  // Faster filtering for common incidents
   @@index([targetUserId, createdAt])
   @@index([targetEmail, createdAt])
   @@index([resource, createdAt])
@@ -101,33 +93,28 @@ model AuditLog {
 }
 
 model Permission {
-  id   String @id @default(cuid())
-  name String @unique
-
+  id    String           @id @default(cuid())
+  name  String           @unique
   roles RolePermission[]
 
-  // Fast ordered listing by name
   @@index([name])
 }
 
 model Role {
-  id    String @id @default(cuid())
-  name  String @unique
-
-  users       UserRole[]
+  id          String           @id @default(cuid())
+  name        String           @unique
   permissions RolePermission[]
+  users       UserRole[]
 
-  // Fast ordered listing by name
   @@index([name])
 }
 
 model RolePermission {
-  id           String @id @default(cuid())
+  id           String     @id @default(cuid())
   roleId       String
   permissionId String
-
-  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
   @@index([roleId])
@@ -138,82 +125,49 @@ model UserRole {
   id     String @id @default(cuid())
   userId String
   roleId String
-
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
   @@index([userId])
   @@index([roleId])
 }
 
-// Small key-value store for one-time flags / app settings.
 model AppConfig {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
 }
 
-enum ExportJobStatus {
-  pending
-  running
-  completed
-  failed
-  cancelled
-}
-
 model AuditLogExportJob {
-  id        String          @id @default(cuid())
-  status    ExportJobStatus @default(pending)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-
-  // Who requested (optional)
+  id                String          @id @default(cuid())
+  status            ExportJobStatus @default(pending)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   requestedByUserId String?
-
-  // Filters snapshot (stored as JSON string for flexibility)
-  filters String
-
-  // Output
-  fileName String?
-  mimeType String?
-  // File location relative to EXPORT_DIR
-  filePath String?
-
-  // Progress
-  rowsWritten Int @default(0)
-
-  // Queue/worker leasing
-  leaseUntil DateTime?
-  attempts   Int      @default(0)
-
-  // Legacy storage (kept for backward compatibility / migrations)
-  csvBase64 String?
-
-  error String?
+  filters           String
+  fileName          String?
+  mimeType          String?
+  filePath          String?
+  rowsWritten       Int             @default(0)
+  leaseUntil        DateTime?
+  attempts          Int             @default(0)
+  csvBase64         String?
+  error             String?
 
   @@index([status, createdAt])
   @@index([requestedByUserId, createdAt])
 }
 
-// ===== DASHBOARD DATA MODELS =====
-
-enum OrderStatus {
-  pending
-  preparing
-  delivered
-  cancelled
-}
-
 model Order {
-  id         String      @id @default(cuid())
-  customerId String?
+  id           String      @id @default(cuid())
+  customerId   String?
   customerName String
-  item       String
-  total      Int         // in smallest currency unit (e.g., Rupiah)
-  status     OrderStatus @default(pending)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  item         String
+  total        Int
+  status       OrderStatus @default(pending)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   @@index([createdAt])
   @@index([status, createdAt])
@@ -222,28 +176,26 @@ model Order {
 model DailyRevenue {
   id        String   @id @default(cuid())
   date      DateTime @unique
-  revenue   Int      // total revenue for the day
-  orders    Int      // total orders for the day
+  revenue   Int
+  orders    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([date])
 }
 
-// ===== ANALYTICS MODELS =====
-
 model Insight {
-  id        String   @id @default(cuid())
-  icon      String
-  title     String
+  id          String   @id @default(cuid())
+  icon        String
+  title       String
   description String
-  value     String
-  change    String?
-  category  String   @default("general")
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  value       String
+  change      String?
+  category    String   @default("general")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([category, isActive])
   @@index([sortOrder])
@@ -264,14 +216,13 @@ model UsageTrend {
 model DailyUsage {
   id        String   @id @default(cuid())
   day       String
-  date      DateTime
+  date      DateTime @unique
   users     Int
   sessions  Int
   pageViews Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([date])
   @@index([date])
 }
 
@@ -305,24 +256,13 @@ model CustomerJourney {
   id         String   @id @default(cuid())
   persona    String
   icon       String
-  steps      String   // JSON array stored as string
+  steps      String
   completion Int
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   @@index([isActive])
-}
-
-// ===== FEATURES MODELS =====
-
-enum ExperimentStatus {
-  planning
-  testing
-  running
-  paused
-  winner
-  completed
 }
 
 model FeatureExperiment {
@@ -343,7 +283,7 @@ model ComponentLib {
   id          String   @id @default(cuid())
   name        String
   description String
-  status      String   @default("stable") // stable, beta, deprecated
+  status      String   @default("stable")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -382,52 +322,30 @@ model FeatureFlag {
   @@index([enabled])
 }
 
-enum AlertStatus {
-  active
-  draft
-  disabled
-}
-
 model AlertRule {
-  id          String      @id @default(cuid())
-  name        String
-  condition   String?
-  channel     String
-  status      AlertStatus @default(draft)
-  triggered   Int         @default(0)
+  id              String      @id @default(cuid())
+  name            String
+  condition       String?
+  channel         String
+  status          AlertStatus @default(draft)
+  triggered       Int         @default(0)
   lastTriggeredAt DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@index([status])
-}
-
-// ===== OPERATIONS MODELS =====
-
-enum ServiceStatus {
-  operational
-  degraded
-  outage
-  maintenance
 }
 
 model Service {
-  id        String        @id @default(cuid())
-  name      String
-  status    ServiceStatus @default(operational)
-  uptime    String        @default("99.9%")
-  lastCheckAt DateTime    @default(now())
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id          String        @id @default(cuid())
+  name        String
+  status      ServiceStatus @default(operational)
+  uptime      String        @default("99.9%")
+  lastCheckAt DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@index([status])
-}
-
-enum QueueStatus {
-  healthy
-  stable
-  watch
-  critical
 }
 
 model QueueMetric {
@@ -441,41 +359,20 @@ model QueueMetric {
   @@index([status])
 }
 
-enum IncidentSeverity {
-  low
-  medium
-  high
-  critical
-}
-
-enum IncidentStatus {
-  investigating
-  identified
-  mitigated
-  resolved
-}
-
 model Incident {
-  id          String           @id @default(cuid())
-  incidentId  String           @unique // Human readable ID like INC-001
-  time        String
-  detail      String
-  severity    IncidentSeverity @default(low)
-  status      IncidentStatus   @default(investigating)
-  resolvedAt  DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id         String           @id @default(cuid())
+  incidentId String           @unique
+  time       String
+  detail     String
+  severity   IncidentSeverity @default(low)
+  status     IncidentStatus   @default(investigating)
+  resolvedAt DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   @@index([status])
   @@index([severity])
   @@index([createdAt])
-}
-
-enum ActionPriority {
-  low
-  medium
-  high
-  critical
 }
 
 model ActionItem {
@@ -496,14 +393,13 @@ model ActionItem {
 }
 
 model PlaybookStep {
-  id          String   @id @default(cuid())
+  id          String               @id @default(cuid())
   title       String
   description String?
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  sortOrder   Int                  @default(0)
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   completions PlaybookCompletion[]
 
   @@index([sortOrder])
@@ -516,19 +412,10 @@ model PlaybookCompletion {
   userId    String
   date      DateTime     @default(now())
   createdAt DateTime     @default(now())
-
   step      PlaybookStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
 
   @@unique([stepId, userId, date])
   @@index([userId, date])
-}
-
-// ===== FEEDBACK & GROWTH MODELS =====
-
-enum FeedbackSentiment {
-  positive
-  mixed
-  negative
 }
 
 model Feedback {
@@ -545,15 +432,15 @@ model Feedback {
 }
 
 model PricingExperiment {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   title     String
   value     String
   change    String
-  isActive  Boolean  @default(true)
-  startDate DateTime @default(now())
+  isActive  Boolean   @default(true)
+  startDate DateTime  @default(now())
   endDate   DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([isActive])
 }
@@ -562,7 +449,7 @@ model ReleaseNote {
   id        String   @id @default(cuid())
   version   String
   date      DateTime
-  items     String   // JSON array stored as string
+  items     String
   category  String   @default("general")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -573,7 +460,7 @@ model ReleaseNote {
 
 model Campaign {
   id          String    @id @default(cuid())
-  date        String    // Day of week or specific date
+  date        String
   title       String
   note        String?
   scheduledAt DateTime?
@@ -586,13 +473,13 @@ model Campaign {
 }
 
 model TeamRitual {
-  id          String   @id @default(cuid())
-  title       String
-  detail      String
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  title     String
+  detail    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([sortOrder])
   @@index([isActive])
@@ -622,8 +509,6 @@ model RevenueMetric {
   @@index([date])
 }
 
-// ===== HEATMAP & INTERACTION MODELS =====
-
 model HeatmapHotspot {
   id        String   @id @default(cuid())
   area      String
@@ -649,24 +534,15 @@ model DeviceStat {
 }
 
 model HeatmapSummary {
-  id           String   @id @default(cuid())
-  totalClicks  Int      @default(0)
-  avgSession   String
-  scrollDepth  Int      @default(0)
-  date         DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  totalClicks Int      @default(0)
+  avgSession  String
+  scrollDepth Int      @default(0)
+  date        DateTime @unique @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@unique([date])
   @@index([date])
-}
-
-// ===== SECURITY MODELS =====
-
-enum SecurityEventSeverity {
-  info
-  warning
-  danger
 }
 
 model SecurityEvent {
@@ -700,32 +576,121 @@ model UserSession {
   @@index([lastSeenAt])
 }
 
-// ===== SELLER MODELS =====
-
 model SellerProduct {
-  id          String   @id @default(cuid())
-  name        String
-  price       Int
-  stock       Int
-  category    String
-  description String
-  image       String   @db.LongText // large blob-like storage for full data URLs / long paths
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id           String        @id @default(cuid())
+  name         String
+  price        Int
+  stock        Int
+  category     String
+  description  String
+  image        String        @db.LongText
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   transactions Transaction[]
 
   @@index([updatedAt])
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
-  productId   String?
-  productName String
-  price       Int
-  createdAt   DateTime @default(now())
+  id              String         @id @default(cuid())
+  orderId         String?        @unique
+  userId          String?
+  productId       String?
+  productName     String
+  price           Int
+  grossAmount     Int?
+  shippingCost    Int            @default(0)
+  status          String         @default("pending")
+  snapToken       String?
+  snapRedirectUrl String?
+  customerName    String?
+  customerEmail   String?
+  customerPhone   String?
+  items           Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
-  product     SellerProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product         SellerProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+  @@index([productId], map: "Transaction_productId_fkey")
+  @@index([userId, createdAt])
+}
+
+enum ExportJobStatus {
+  pending
+  running
+  completed
+  failed
+  cancelled
+}
+
+enum OrderStatus {
+  pending
+  preparing
+  delivered
+  cancelled
+}
+
+enum ExperimentStatus {
+  planning
+  testing
+  running
+  paused
+  winner
+  completed
+}
+
+enum AlertStatus {
+  active
+  draft
+  disabled
+}
+
+enum ServiceStatus {
+  operational
+  degraded
+  outage
+  maintenance
+}
+
+enum QueueStatus {
+  healthy
+  stable
+  watch
+  critical
+}
+
+enum IncidentSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum IncidentStatus {
+  investigating
+  identified
+  mitigated
+  resolved
+}
+
+enum ActionPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum FeedbackSentiment {
+  positive
+  mixed
+  negative
+}
+
+enum SecurityEventSeverity {
+  info
+  warning
+  danger
 }

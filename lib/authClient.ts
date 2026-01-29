@@ -5,6 +5,7 @@ export type AuthUser = {
   phone?: string | null;
   avatar?: string | null;
   roles: string[];
+  role?: string | null; // simple role field (admin/customer)
 };
 
 export type AuthResponse = {
@@ -49,6 +50,7 @@ function getUser(data: JsonValue): AuthUser | undefined {
   const phone = u.phone;
   const avatar = u.avatar;
   const roles = u.roles;
+  const role = (u as any).role;
 
   if (typeof id !== "string" || typeof email !== "string" || typeof name !== "string") {
     return undefined;
@@ -64,7 +66,8 @@ function getUser(data: JsonValue): AuthUser | undefined {
     name, 
     phone: typeof phone === "string" ? phone : null,
     avatar: typeof avatar === "string" ? avatar : null,
-    roles: rolesArray 
+    roles: rolesArray,
+    role: typeof role === "string" ? role : undefined,
   };
 }
 

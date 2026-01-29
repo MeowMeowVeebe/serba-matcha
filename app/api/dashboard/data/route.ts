@@ -2,7 +2,17 @@ import { NextResponse } from "next/server";
 import { getSessionPayloadFromRequest } from "@/lib/server/authSession";
 import { prisma } from "@/lib/server/prisma";
 
-// Error response helper for consistent error formatting
+const DISPLAY_STATUSES = ["settlement", "capture", "success", "paid", "pending"] as const;
+
+type Period = "week" | "month" | "year";
+
+type ChartData = {
+  labels: string[];
+  values: number[];
+  period: Period;
+  totalPeriodRevenue: number;
+};
+
 function errorResponse(message: string, status: number, details?: string) {
   return NextResponse.json(
     {
@@ -17,16 +27,14 @@ function errorResponse(message: string, status: number, details?: string) {
   );
 }
 
-// Empty data when database is empty
-function getEmptyData(period: "week" | "month" | "year" = "week") {
+function emptyChart(period: Period): ChartData {
   let labels: string[] = [];
   let values: number[] = [];
-  
+
   if (period === "week") {
     labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    values = [0, 0, 0, 0, 0, 0, 0];
+    values = Array(7).fill(0);
   } else if (period === "month") {
-    // Last 30 days
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -34,7 +42,6 @@ function getEmptyData(period: "week" | "month" | "year" = "week") {
       values.push(0);
     }
   } else {
-    // Last 12 months
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const currentMonth = new Date().getMonth();
     for (let i = 11; i >= 0; i--) {
@@ -43,269 +50,220 @@ function getEmptyData(period: "week" | "month" | "year" = "week") {
       values.push(0);
     }
   }
-  
-  return {
-    metrics: {
-      ordersToday: 0,
-      revenue: 0,
-      topDish: "-",
-      totalCustomers: 0,
-      avgOrderValue: 0,
-      pendingOrders: 0,
-    },
-    recentOrders: [],
-    chart: {
-      labels,
-      values,
-      period,
-    },
-    popularItems: [],
-    isEmpty: true,
-  };
+
+  return { labels, values, period, totalPeriodRevenue: 0 };
 }
 
-// Get chart data based on period from DailyRevenue table
-async function getChartData(period: "week" | "month" | "year") {
+async function getChartData(userId: string, period: Period): Promise<ChartData> {
   const now = new Date();
   now.setHours(23, 59, 59, 999);
-  
+
   let startDate: Date;
   let labels: string[] = [];
-  let dateMap: Map<string, number> = new Map();
-  
+  const dateMap: Map<string, number> = new Map();
+
   if (period === "week") {
-    // Last 7 days
     startDate = new Date(now);
     startDate.setDate(startDate.getDate() - 6);
     startDate.setHours(0, 0, 0, 0);
-    
     const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     for (let i = 0; i < 7; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
-      const key = d.toDateString();
       labels.push(weekDays[d.getDay()]);
-      dateMap.set(key, 0);
+      dateMap.set(d.toDateString(), 0);
     }
   } else if (period === "month") {
-    // Last 30 days
     startDate = new Date(now);
     startDate.setDate(startDate.getDate() - 29);
     startDate.setHours(0, 0, 0, 0);
-    
     for (let i = 0; i < 30; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
-      const key = d.toDateString();
       labels.push(d.toLocaleDateString("id-ID", { day: "numeric", month: "short" }));
-      dateMap.set(key, 0);
+      dateMap.set(d.toDateString(), 0);
     }
   } else {
-    // Last 12 months - aggregate by month
     startDate = new Date(now);
     startDate.setMonth(startDate.getMonth() - 11);
     startDate.setDate(1);
     startDate.setHours(0, 0, 0, 0);
-    
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     for (let i = 0; i < 12; i++) {
       const d = new Date(startDate);
       d.setMonth(d.getMonth() + i);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
       labels.push(monthNames[d.getMonth()]);
-      dateMap.set(key, 0);
+      dateMap.set(`${d.getFullYear()}-${d.getMonth()}`, 0);
     }
   }
-  
-  // Fetch data from DailyRevenue table
-  const dailyRevenues = await prisma.dailyRevenue.findMany({
+
+  const txs = await prisma.transaction.findMany({
     where: {
-      date: {
-        gte: startDate,
-        lte: now,
-      },
+      userId,
+      status: { in: DISPLAY_STATUSES as any },
+      createdAt: { gte: startDate, lte: now },
     },
-    orderBy: { date: "asc" },
+    select: { createdAt: true, grossAmount: true, price: true },
+    orderBy: { createdAt: "asc" },
   });
-  
-  // Map revenue data
-  for (const dr of dailyRevenues) {
-    const d = new Date(dr.date);
+
+  for (const tx of txs) {
+    const amount = tx.grossAmount ?? tx.price ?? 0;
+    const d = new Date(tx.createdAt);
     if (period === "year") {
-      // Aggregate by month
       const key = `${d.getFullYear()}-${d.getMonth()}`;
-      const current = dateMap.get(key) ?? 0;
-      dateMap.set(key, current + dr.revenue);
+      dateMap.set(key, (dateMap.get(key) ?? 0) + amount);
     } else {
-      // Daily
       const key = d.toDateString();
-      if (dateMap.has(key)) {
-        dateMap.set(key, dr.revenue);
-      }
+      if (dateMap.has(key)) dateMap.set(key, (dateMap.get(key) ?? 0) + amount);
     }
   }
-  
-  // Convert map to values array (maintain order)
+
   const values: number[] = [];
   if (period === "year") {
     for (let i = 0; i < 12; i++) {
       const d = new Date(startDate);
       d.setMonth(d.getMonth() + i);
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      values.push(dateMap.get(key) ?? 0);
+      values.push(dateMap.get(`${d.getFullYear()}-${d.getMonth()}`) ?? 0);
     }
   } else if (period === "month") {
     for (let i = 0; i < 30; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
-      const key = d.toDateString();
-      values.push(dateMap.get(key) ?? 0);
+      values.push(dateMap.get(d.toDateString()) ?? 0);
     }
   } else {
     for (let i = 0; i < 7; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
-      const key = d.toDateString();
-      values.push(dateMap.get(key) ?? 0);
+      values.push(dateMap.get(d.toDateString()) ?? 0);
     }
   }
-  
-  // Calculate total revenue for period
-  const totalPeriodRevenue = values.reduce((sum, v) => sum + v, 0);
-  
-  return { labels, values, totalPeriodRevenue, period };
+
+  return { labels, values, period, totalPeriodRevenue: values.reduce((s, v) => s + v, 0) };
 }
 
 export async function GET(req: Request) {
-  // Auth check
   const session = getSessionPayloadFromRequest(req);
-  if (!session) {
-    return errorResponse("Unauthorized", 401, "Please login to access dashboard data");
+  if (!session) return errorResponse("Unauthorized", 401, "Please login to access dashboard data");
+
+  const url = new URL(req.url);
+  const period = (url.searchParams.get("period") as Period) || "week";
+  if (!["week", "month", "year"].includes(period)) {
+    return errorResponse("Invalid period parameter", 400, "Period must be 'week', 'month', or 'year'");
   }
 
   try {
-    // Parse period from URL query params
-    const url = new URL(req.url);
-    const period = (url.searchParams.get("period") as "week" | "month" | "year") || "week";
-    
-    // Validate period
-    if (!["week", "month", "year"].includes(period)) {
-      return errorResponse("Invalid period parameter", 400, "Period must be 'week', 'month', or 'year'");
-    }
-    
-    // Get today's date range
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Check if we have any data in database
-    const totalOrders = await prisma.order.count();
-    
-    // If no data, return empty data
+    const totalOrders = await prisma.transaction.count({
+      where: { userId: session.sub, status: { in: DISPLAY_STATUSES as any } },
+    });
+
     if (totalOrders === 0) {
-      return NextResponse.json({
-        success: true,
-        ...getEmptyData(period),
-      });
+      return NextResponse.json({ success: true, ...getEmptyData(period) });
     }
 
-    // Get orders today count
-    const ordersToday = await prisma.order.count({
+    const ordersToday = await prisma.transaction.count({
       where: {
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
-        },
+        userId: session.sub,
+        status: { in: DISPLAY_STATUSES as any },
+        createdAt: { gte: today, lt: tomorrow },
       },
     });
 
-    // Get today's revenue
-    const todayRevenue = await prisma.order.aggregate({
+    const todaySpendingAgg = await prisma.transaction.aggregate({
       where: {
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
-        },
-        status: "delivered",
+        userId: session.sub,
+        status: { in: DISPLAY_STATUSES as any },
+        createdAt: { gte: today, lt: tomorrow },
       },
-      _sum: {
-        total: true,
-      },
+      _sum: { grossAmount: true, price: true },
     });
 
-    // Get top dish (most ordered item - all time if no orders today)
-    const topDish = await prisma.order.groupBy({
-      by: ["item"],
-      _count: {
-        item: true,
-      },
-      orderBy: {
-        _count: {
-          item: "desc",
-        },
-      },
-      take: 1,
-    });
-
-    // Get recent orders (last 10)
-    const recentOrders = await prisma.order.findMany({
+    const recentOrders = await prisma.transaction.findMany({
+      where: { userId: session.sub, status: { in: DISPLAY_STATUSES as any } },
       orderBy: { createdAt: "desc" },
       take: 10,
       select: {
         id: true,
         customerName: true,
-        item: true,
-        total: true,
+        productName: true,
+        price: true,
+        grossAmount: true,
         status: true,
         createdAt: true,
+        items: true,
       },
     });
 
-    // Get chart data based on period
-    const chartData = await getChartData(period);
+    const itemCounts: Record<string, number> = {};
+    const itemRevenue: Record<string, number> = {};
+    for (const tx of recentOrders) {
+      const items = (tx.items as any[]) || [];
+      for (const it of items) {
+        const key = it.name ?? "Item";
+        itemCounts[key] = (itemCounts[key] ?? 0) + (Number(it.qty) || 1);
+        itemRevenue[key] = (itemRevenue[key] ?? 0) + (Number(it.qty) || 1) * (Number(it.price) || 0);
+      }
+    }
+    const topDish = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "-";
+    const popularItems = Object.entries(itemCounts)
+      .map(([name, orders]) => ({
+        name,
+        orders,
+        revenue: itemRevenue[name] ?? 0,
+      }))
+      .sort((a, b) => b.orders - a.orders || b.revenue - a.revenue)
+      .slice(0, 5);
 
-    // Calculate total revenue from delivered orders (all time)
-    const totalRevenue = await prisma.order.aggregate({
-      where: { status: "delivered" },
-      _sum: { total: true },
+    const chartData = await getChartData(session.sub, period);
+
+    const totalSpendingAgg = await prisma.transaction.aggregate({
+      where: { userId: session.sub, status: { in: DISPLAY_STATUSES as any } },
+      _sum: { grossAmount: true, price: true },
+    });
+
+    const pendingOrders = await prisma.transaction.count({
+      where: { userId: session.sub, status: "pending" },
     });
 
     return NextResponse.json({
       success: true,
       metrics: {
         ordersToday,
-        revenue: todayRevenue._sum.total ?? totalRevenue._sum.total ?? 0,
-        topDish: topDish[0]?.item ?? "-",
+        revenue:
+          todaySpendingAgg._sum.grossAmount ??
+          todaySpendingAgg._sum.price ??
+          totalSpendingAgg._sum.grossAmount ??
+          totalSpendingAgg._sum.price ??
+          0,
+        topDish,
         periodRevenue: chartData.totalPeriodRevenue,
+        pendingOrders,
       },
       recentOrders: recentOrders.map((o) => ({
         id: o.id.slice(-3).padStart(3, "0"),
-        customerName: o.customerName,
-        item: o.item,
-        total: o.total,
-        status: o.status,
+        customerName: o.customerName ?? "You",
+        item: (Array.isArray(o.items) && (o.items as any[])[0]?.name) || o.productName,
+        total: o.grossAmount ?? o.price ?? 0,
+        status: o.status ?? "pending",
+        createdAt: o.createdAt,
       })),
       chart: {
         labels: chartData.labels,
         values: chartData.values,
         period: chartData.period,
       },
+      popularItems,
       isDemo: false,
     });
   } catch (error) {
-    // Log error with context for debugging
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    
-    console.error("[Dashboard API Error]", {
-      message: errorMessage,
-      stack: errorStack,
-      timestamp: new Date().toISOString(),
-      userId: session?.sub,
-    });
-
-    // Return professional error response
+    console.error("[Dashboard API Error]", errorMessage);
     return errorResponse(
       "Failed to fetch dashboard data",
       500,

@@ -6,6 +6,7 @@ export type UserRecord = {
   id: string;
   email: string;
   name: string;
+  role?: string | null;
   phone: string | null;
   avatar: string | null;
   password: PasswordHash;
@@ -86,6 +87,7 @@ export async function findUserByEmail(email: string): Promise<UserRecord | null>
     id: u.id,
     email: u.email,
     name: u.name,
+    role: (u as any).role ?? null,
     phone: u.phone,
     avatar: u.avatar,
     password: toPasswordHash(u),
@@ -118,6 +120,7 @@ export async function findUserById(id: string): Promise<UserRecord | null> {
     id: u.id,
     email: u.email,
     name: u.name,
+    role: (u as any).role ?? null,
     phone: u.phone,
     avatar: u.avatar,
     password: toPasswordHash(u),
@@ -155,6 +158,7 @@ export async function createUser(params: {
       id: u.id,
       email: u.email,
       name: u.name,
+      role: (u as any).role ?? null,
       phone: u.phone,
       avatar: u.avatar,
       password: toPasswordHash(u),
@@ -205,6 +209,7 @@ export async function updateUserProfile(params: {
     id: u.id,
     email: u.email,
     name: u.name,
+    role: (u as any).role ?? null,
     phone: u.phone,
     avatar: u.avatar,
     password: toPasswordHash(u),

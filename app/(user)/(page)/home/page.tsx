@@ -1,13 +1,47 @@
 
 
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
 import localFont from "next/font/local";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
-
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  category: string;
+  description?: string;
+  stock?: number;
+};
 
 export default function homepage() {
+  const [featured, setFeatured] = useState<Product | null>(null);
+  const [featuredLoading, setFeaturedLoading] = useState(false);
+
+  useEffect(() => {
+    const loadFeatured = async () => {
+      setFeaturedLoading(true);
+      try {
+        const res = await fetch("/api/seller/products");
+        if (!res.ok) return;
+        const json = await res.json();
+        const products: Product[] = json.products || [];
+        if (!products.length) return;
+        // Heuristic: pick the product with lowest stock (most purchased); fallback to first item.
+        const sorted = [...products].sort((a, b) => (a.stock ?? Number.MAX_SAFE_INTEGER) - (b.stock ?? Number.MAX_SAFE_INTEGER));
+        setFeatured(sorted[0]);
+      } catch {
+        /* ignore */
+      } finally {
+        setFeaturedLoading(false);
+      }
+    };
+    loadFeatured();
+  }, []);
+
   return (
 
     <main className="min-h-screen bg-green-50">
@@ -41,6 +75,10 @@ export default function homepage() {
 
 
       </section>
+
+
+
+
       {/* Hero Section */}
       <section className="relative mx-auto px-6   min-h-[32rem] text-center py-12 bg-gradient-to-b from-[#FAF8F5] to-[#F4F1EC]">
 
@@ -104,9 +142,7 @@ export default function homepage() {
       </section>
 
 
-
-
-      <section className="relative text-center px-6">
+          <section className="relative text-center px-6">
         <div className="pointer-events-none absolute left-0 w-full h-10 bg-gradient-to-b from-black/10 to-transparent" />
 
         <div className="flex flex-row flex-wrap items-center justify-center gap-12 py-12">
@@ -146,21 +182,103 @@ export default function homepage() {
 
       </section>
 
+      {/* Featured dynamic product */}
+      <section className="w-full pb-12">
+        <div className="bg-[#F4F1EC] py-10 text-center">
 
+        </div>
 
+        <div className="relative w-full h-[1200px] bg-[#F4F1EC] overflow-hidden">
+          <Image
+            src="/background-featured2.png"
+            alt="Featured Matcha Background"
+            fill
+            className="object-cover object-center pointer-events-none"
+            priority
+          />
 
+          {/* decor */}
+          <div className="pointer-events-none absolute inset-0 z-10">
+            <div className="absolute left-0 bottom-0 w-[240px] sm:w-[320px] md:w-[380px]">
+              <Image
+                src="/leaf-1.png"
+                alt="Leaf Left"
+                width={500}
+                height={500}
+                className="h-auto w-full object-contain"
+              />
+            </div>
 
-      {/* Products Section */}
-      <section className="flex justify-center max-w-full px-6 pb-12 relative bg-[#F4F1EC]  ">
+            <div className="absolute right-0 bottom-0 w-[240px] sm:w-[320px] md:w-[380px]">
+              <Image
+                src="/leaf-2.png"
+                alt="Leaf Right"
+                width={500}
+                height={500}
+                className="h-auto w-full object-contain"
+              />
+            </div>
 
-        <div className="pointer-events-none absolute left-0 w-full h-10 bg-gradient-to-b from-black/10 to-transparent" />
+            <div className="absolute left-1/2 top-0 -translate-x-1/2 w-[300px]">
+              <Image
+                src="/sign-board.png"
+                alt="Sign Board"
+                width={740}
+                height={740}
+                className="h-auto w-full object-contain"
+              />
+            </div>
 
-        <h2 className="text-2xl font-semibold text-green-900 mb-6 text-center mt-10 ">
-          Featured Matcha
-        </h2>
+            <div className="absolute left-1/2 bottom-0 -translate-x-1/2 w-[900px]">
+              <Image
+                src="/wood-plate.png"
+                alt="Wood Plate"
+                width={740}
+                height={740}
+                className="h-auto w-full object-contain"
+              />
+            </div>
+          </div>
 
+          {/* featured product (BOTTOM CENTER) */}
+          <div className="absolute inset-0 z-20 bottom-7">
+            <div className="mx-auto max-w-7xl px-6 h-full flex items-end justify-center pb-14">
+              <div className="absolute inset-0 z-20">
+                <div className="mx-auto max-w-7xl px-6 h-full flex items-end justify-center pb-14">
+                  {/* SIZE LOCK */}
+                  <div className="relative w-[260px] sm:w-[340px] md:w-[420px] lg:w-[520px] aspect-square">
+                    <Image
+                      src={featured?.image || "/matchatea.png"}
+                      alt={featured?.name || "Featured product"}
+                      fill
+                      sizes="(max-width: 640px) 260px, (max-width: 768px) 340px, (max-width: 1024px) 420px, 520px"
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
+                </div>
+              </div>
 
+            </div>
+          </div>
+        </div>
       </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       {/* About Section */}
       <section className="bg-green-100 py-90 ">
@@ -180,3 +298,5 @@ export default function homepage() {
     </main>
   );
 }
+
+

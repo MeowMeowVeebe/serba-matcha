@@ -11,16 +11,15 @@ type DashboardData = {
     ordersToday: number;
     revenue: number;
     topDish: string;
-    avgOrderValue: number;
-    pendingOrders: number;
+    pendingOrders?: number;
   };
   recentOrders: Array<{
     id: string;
     customerName: string;
     item: string;
     total: number;
-    status: "pending" | "preparing" | "delivered" | "cancelled";
-    time: string;
+    status: string;
+    createdAt?: string;
   }>;
   chart: {
     labels: string[];
@@ -51,10 +50,11 @@ const Icons = {
       </svg>
     </Icon>
   ),
-  revenue: (
+  spending: (
     <Icon>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        <path d="M8 6v12M16 6v12" />
       </svg>
     </Icon>
   ),
@@ -128,16 +128,23 @@ function formatCurrency(value: number): string {
 }
 
 function getStatusBadge(status: string) {
+  const normalized = status?.toLowerCase() || "pending";
   const config: Record<string, { class: string; label: string }> = {
     delivered: { class: "matcha-badge--success", label: "Delivered" },
+    success: { class: "matcha-badge--success", label: "Paid" },
+    settlement: { class: "matcha-badge--success", label: "Paid" },
+    capture: { class: "matcha-badge--success", label: "Paid" },
+    paid: { class: "matcha-badge--success", label: "Paid" },
     preparing: { class: "matcha-badge--warning", label: "Preparing" },
     pending: { class: "matcha-badge--info", label: "Pending" },
+    cancel: { class: "matcha-badge--danger", label: "Cancelled" },
     cancelled: { class: "matcha-badge--danger", label: "Cancelled" },
+    failure: { class: "matcha-badge--danger", label: "Failed" },
   };
 
-  const { class: cls, label } = config[status] || {
+  const { class: cls, label } = config[normalized] || {
     class: "matcha-badge--neutral",
-    label: status,
+    label: status || "Pending",
   };
 
   return <span className={`matcha-badge ${cls}`}>{label}</span>;
@@ -261,7 +268,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
         labels: chartData.labels,
         datasets: [
           {
-            label: "Revenue",
+            label: "Spending",
             data: chartData.values,
             borderColor: "#22c55e",
             backgroundColor: gradient,
@@ -326,7 +333,6 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
     ordersToday: 0,
     revenue: 0,
     topDish: "-",
-    avgOrderValue: 0,
     pendingOrders: 0,
   };
 
@@ -355,7 +361,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
 
       <section className="matcha-grid matcha-grid--4 animate-fade-in animate-delay-1">
         <StatCard icon={Icons.orders} label="Orders Hari Ini" value={metrics.ordersToday} trend="up" trendValue="+12%" />
-        <StatCard icon={Icons.revenue} label="Total Spending" value={formatCurrency(metrics.revenue)} trend="up" trendValue="+8%" />
+        <StatCard icon={Icons.spending} label="Total Spending" value={formatCurrency(metrics.revenue)} trend="up" trendValue="+8%" />
         <StatCard icon={Icons.clock} label="Pending Orders" value={metrics.pendingOrders || 0} />
       </section>
 
@@ -364,7 +370,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
           <div className="matcha-card__header">
             <h3>
               <span className="matcha-card__header-icon">{Icons.chart}</span>
-              Revenue Overview
+              Spending Overview
             </h3>
 
             <div className="chart-period-tabs">
@@ -410,50 +416,7 @@ function DashboardContent({ user, isLoadingUser }: { user: any; isLoadingUser: b
       </div>
 
       <div className="dashboard-bottom-grid animate-fade-in animate-delay-3">
-        <div className="matcha-card">
-          <div className="matcha-card__header">
-            <h3>
-              <span className="matcha-card__header-icon">{Icons.orders}</span>
-              Recent Orders
-            </h3>
-            <Link href="/dashboard/settings" className="matcha-btn matcha-btn--ghost matcha-btn--sm">
-              View All
-            </Link>
-          </div>
-
-          <div className="matcha-card__body" style={{ padding: 0 }}>
-            {orders.length > 0 ? (
-              <table className="matcha-table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Item</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.slice(0, 5).map((order) => (
-                    <tr key={order.id}>
-                      <td>#{order.id}</td>
-                      <td>{order.customerName}</td>
-                      <td>{order.item}</td>
-                      <td>{formatCurrency(order.total)}</td>
-                      <td>{getStatusBadge(order.status)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="matcha-empty">
-                <div className="matcha-empty__icon">{Icons.orders}</div>
-                <h3 className="matcha-empty__title">Belum Ada Order</h3>
-                <p className="matcha-empty__text">Order baru akan muncul di sini.</p>
-              </div>
-            )}
-          </div>
-        </div>
+       
 
         <div className="matcha-card">
           <div className="matcha-card__header">

@@ -3,6 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAlert } from "@/context/AlertContext";
+import { useUser } from "@/lib/hooks/useUser";
 
 type Product = {
   id: string;
@@ -68,6 +71,8 @@ const products: Product[] = [
   },
 ];
 
+const cartKey = (userId?: string | null) => (userId ? `cart-items-${userId}` : "cart-items-guest");
+
 const categories: Array<{ value: Product["category"] | "All"; label: string }> = [
   { value: "All", label: "All" },
   { value: "Matcha", label: "Matcha" },
@@ -77,6 +82,9 @@ const categories: Array<{ value: Product["category"] | "All"; label: string }> =
 ];
 
 export default function ShoppingPage() {
+  const router = useRouter();
+  const { showAlert } = useAlert();
+  const { user, isLoading: userLoading } = useUser();
   const [activeCategory, setActiveCategory] = useState<(typeof categories)[number]["value"]>("All");
   const [onlyPromo, setOnlyPromo] = useState(false);
   const [search, setSearch] = useState("");
@@ -89,6 +97,45 @@ export default function ShoppingPage() {
       return matchCategory && matchPromo && matchSearch;
     });
   }, [activeCategory, onlyPromo, search]);
+
+  const readCartSafe = (key: string) => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(raw) ? raw : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const ensureLoggedIn = async () => {
+    if (user) return true;
+    if (userLoading) return false;
+    await showAlert("Silakan login dulu untuk menambahkan ke keranjang.", { variant: "warning" });
+    const next = typeof window !== "undefined" ? window.location.pathname : "/shopping";
+    router.push(`/login?next=${encodeURIComponent(next)}`);
+    return false;
+  };
+
+  const addToCart = async (product: Product) => {
+    if (!(await ensureLoggedIn())) return;
+    const key = cartKey(user?.id);
+    const current = readCartSafe(key);
+    const foundIndex = current.findIndex((p: any) => p.productId === product.id);
+    let next;
+    if (foundIndex >= 0) {
+      next = current.map((line: any, idx: number) =>
+        idx === foundIndex ? { ...line, qty: line.qty + 1 } : line
+      );
+    } else {
+      next = [
+        ...current,
+        { productId: product.id, qty: 1, snapshot: { name: product.name, price: product.price, image: product.image, category: product.category } },
+      ];
+    }
+    localStorage.setItem(key, JSON.stringify(next));
+    window.dispatchEvent(new Event("cart-updated"));
+    showAlert("Added to cart.", { variant: "success" });
+  };
 
   return (
     <main className="min-h-screen bg-[#F4F1EC] pb-16 pt-28">
@@ -189,7 +236,10 @@ export default function ShoppingPage() {
                   </span>
                 </div>
                 <p className="text-sm text-green-800/80">{item.description}</p>
-                <button className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#0C3B2E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#127246]">
+                <button
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#0C3B2E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#127246]"
+                  onClick={() => addToCart(item)}
+                >
                   Add to cart
                 </button>
               </div>

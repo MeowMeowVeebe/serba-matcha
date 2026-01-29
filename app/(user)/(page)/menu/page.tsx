@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAlert } from "@/context/AlertContext";
+import { useUser } from "@/lib/hooks/useUser";
 
 type Product = {
   id: string;
@@ -20,9 +22,11 @@ type CartLine = {
   snapshot?: { name: string; price: number; image: string; category: string };
 };
 
-const readCartSafe = (): CartLine[] => {
+const cartKey = (userId?: string | null) => (userId ? `cart-items-${userId}` : "cart-items-guest");
+
+const readCartSafe = (key: string): CartLine[] => {
   try {
-    const raw = JSON.parse(localStorage.getItem("cart-items") || "[]");
+    const raw = JSON.parse(localStorage.getItem(key) || "[]");
     return Array.isArray(raw) ? raw : [];
   } catch {
     return [];
@@ -38,6 +42,8 @@ const categories: Array<{ value: Product["category"] | "All"; label: string }> =
 ];
 
 export default function MenuPage() {
+  const router = useRouter();
+  const { user, isLoading: userLoading } = useUser();
   const [activeCategory, setActiveCategory] = useState<(typeof categories)[number]["value"]>("All");
   const [onlyPromo, setOnlyPromo] = useState(false);
   const [search, setSearch] = useState("");
@@ -48,7 +54,8 @@ export default function MenuPage() {
   const { showAlert } = useAlert();
 
   useEffect(() => {
-    setCart(readCartSafe());
+    const key = cartKey(user?.id);
+    setCart(readCartSafe(key));
     setCartHydrated(true);
     const load = async () => {
       try {
@@ -71,12 +78,13 @@ export default function MenuPage() {
       }
     };
     load();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!cartHydrated) return;
-    localStorage.setItem("cart-items", JSON.stringify(cart));
-  }, [cart, cartHydrated]);
+    const key = cartKey(user?.id);
+    localStorage.setItem(key, JSON.stringify(cart));
+  }, [cart, cartHydrated, user?.id]);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -88,6 +96,7 @@ export default function MenuPage() {
   }, [activeCategory, onlyPromo, search, products]);
 
   const handleBuy = async (product: Product) => {
+    if (!(await ensureLoggedIn())) return;
     try {
       await fetch("/api/transactions", {
         method: "POST",
@@ -100,8 +109,19 @@ export default function MenuPage() {
     }
   };
 
-  const handleAddToCart = (product: Product) => {
-    const current = readCartSafe();
+  const ensureLoggedIn = async () => {
+    if (user) return true;
+    if (userLoading) return false;
+    showAlert("Silakan login dulu sebelum menambahkan ke keranjang.", { variant: "warning" });
+    const next = typeof window !== "undefined" ? window.location.pathname : "/menu";
+    router.push(`/login?next=${encodeURIComponent(next)}`);
+    return false;
+  };
+
+  const handleAddToCart = async (product: Product) => {
+    if (!(await ensureLoggedIn())) return;
+    const key = cartKey(user?.id);
+    const current = readCartSafe(key);
     const foundIndex = current.findIndex((p) => p.productId === product.id);
     let next: CartLine[];
 
@@ -125,7 +145,7 @@ export default function MenuPage() {
       ];
     }
 
-    localStorage.setItem("cart-items", JSON.stringify(next));
+    localStorage.setItem(key, JSON.stringify(next));
     setCart(next);
 
     if (typeof window !== "undefined") {

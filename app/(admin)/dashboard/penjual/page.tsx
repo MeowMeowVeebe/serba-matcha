@@ -1,6 +1,8 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 
-export default function PenjualRedirect() {
+export const dynamic = "force-dynamic";
+
+// Middleware already guards admin access.
+export default function PenjualPage() {
   redirect("/dashboard/seller/products");
 }
-

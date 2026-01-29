@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAlert } from "@/context/AlertContext";
 import { useConfirm } from "@/components/ui/GlobalConfirmDialog";
+import { useUser } from "@/lib/hooks/useUser";
 
 type Product = {
   id: string;
@@ -22,9 +24,11 @@ type CartLine = {
   snapshot?: { name: string; price: number; image: string; category: string };
 };
 
-const readCartSafe = (): CartLine[] => {
+const cartKey = (userId?: string | null) => (userId ? `cart-items-${userId}` : "cart-items-guest");
+
+const readCartSafe = (key: string): CartLine[] => {
   try {
-    const raw = JSON.parse(localStorage.getItem("cart-items") || "[]");
+    const raw = JSON.parse(localStorage.getItem(key) || "[]");
     return Array.isArray(raw) ? raw : [];
   } catch {
     return [];
@@ -32,25 +36,41 @@ const readCartSafe = (): CartLine[] => {
 };
 
 export default function CartPage() {
+  const router = useRouter();
+  const { user, isLoading: userLoading } = useUser();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [shipping, setShipping] = useState<"pickup" | "express" | "standard">("standard");
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
   const [cartHydrated, setCartHydrated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const { showAlert } = useAlert();
   const { alert } = useConfirm();
 
+  // Require login to view cart
+  useEffect(() => {
+    if (userLoading) return;
+    if (!user) {
+      const nextPath = typeof window !== "undefined" ? window.location.pathname : "/cart";
+      router.replace(`/login?next=${encodeURIComponent(nextPath)}`);
+      return;
+    }
+    setAuthChecked(true);
+  }, [user, userLoading, router]);
+
   // Load products and cart
   useEffect(() => {
+    if (!authChecked && !user) return;
+    const key = cartKey(user?.id);
     const loadCart = () => {
-      setCart(readCartSafe());
+      setCart(readCartSafe(key));
     };
     loadCart();
     setCartHydrated(true);
 
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "cart-items") loadCart();
+      if (e.key === key) loadCart();
     };
     const onCartUpdated = () => loadCart();
     window.addEventListener("storage", onStorage);
@@ -66,13 +86,14 @@ export default function CartPage() {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("cart-updated", onCartUpdated);
     };
-  }, []);
+  }, [authChecked, user]);
 
   // Persist cart
   useEffect(() => {
     if (!cartHydrated) return;
-    localStorage.setItem("cart-items", JSON.stringify(cart));
-  }, [cart, cartHydrated]);
+    const key = cartKey(user?.id);
+    localStorage.setItem(key, JSON.stringify(cart));
+  }, [cart, cartHydrated, user?.id]);
 
   const itemsDetailed = useMemo(() => {
     return cart
@@ -117,31 +138,61 @@ export default function CartPage() {
     setCart((prev) => prev.filter((line) => line.productId !== id));
   };
 
+  const ensureLoggedIn = async () => {
+    if (user) return true;
+    if (userLoading) return false;
+    await alert({
+      title: "Perlu login",
+      message: "Silakan login terlebih dahulu untuk menambahkan atau checkout.",
+      variant: "warning",
+      confirmText: "Ke halaman login",
+    });
+    const next = typeof window !== "undefined" ? window.location.pathname : "/cart";
+    router.push(`/login?next=${encodeURIComponent(next)}`);
+    return false;
+  };
+
   const handleCheckout = async () => {
     if (itemsDetailed.length === 0) return;
+    if (!(await ensureLoggedIn())) return;
     setCheckingOut(true);
     try {
-      await Promise.all(
-        itemsDetailed.map((item) =>
-          fetch("/api/transactions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ productId: item.id, productName: item.name, price: item.price }),
-          })
-        )
-      );
-      setCart([]);
-      localStorage.setItem("cart-items", "[]");
-      await alert({
-        title: "Checkout berhasil",
-        message: "Terima kasih! Pesanan kamu sedang diproses.",
-        variant: "success",
-        confirmText: "OK",
+      const res = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: itemsDetailed.map((item) => ({
+            productId: item.id,
+            name: item.name,
+            price: item.price,
+            qty: item.qty,
+            image: item.image,
+            category: item.category,
+          })),
+          shippingCost,
+          shippingMethod: shipping,
+          customer: { name: "Guest" },
+        }),
       });
+      const json = await res.json();
+
+      if (!res.ok || !json.redirectUrl) {
+        throw new Error(json.error || "Failed to start payment.");
+      }
+
+      // Keep cart data while user finishes payment; they'll return with the same items.
+      await alert({
+        title: "Redirecting to payment",
+        message: "Kami akan membawa kamu ke halaman pembayaran Midtrans.",
+        variant: "success",
+        confirmText: "Lanjutkan",
+      });
+
+      window.location.href = json.redirectUrl as string;
     } catch (e) {
       await alert({
         title: "Checkout gagal",
-        message: "Checkout gagal. Coba lagi.",
+        message: e instanceof Error ? e.message : "Checkout gagal. Coba lagi.",
         variant: "danger",
         confirmText: "OK",
       });
@@ -149,6 +200,8 @@ export default function CartPage() {
       setCheckingOut(false);
     }
   };
+
+  if (!user && !userLoading) return null;
 
   return (
     <main className="min-h-screen bg-[#F4F1EC] pb-16 pt-28">
@@ -308,7 +361,8 @@ export default function CartPage() {
                   </div>
                   <button
                     className="text-sm font-semibold text-[#0C3B2E]"
-                    onClick={() => {
+                    onClick={async () => {
+                      if (!(await ensureLoggedIn())) return;
                       setCart((prev) => {
                         const found = prev.find((line) => line.productId === p.id);
                         if (found) return prev.map((line) => line.productId === p.id ? { ...line, qty: line.qty + 1 } : line);
