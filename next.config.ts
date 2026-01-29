@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
+
+/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
+
+    output: "standalone",
+
   // Performance optimizations
   reactStrictMode: true,
   poweredByHeader: false,
@@ -11,6 +16,9 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
   },
+
+
+  
 
   // Compiler optimizations
   compiler: {

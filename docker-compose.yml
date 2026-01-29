@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      # add your env vars here, example:
+      # DATABASE_URL: "mysql://..."
+      # NEXTAUTH_SECRET: "..."
+      # NEXTAUTH_URL: "https://yourdomain.com"
