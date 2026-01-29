@@ -142,7 +142,7 @@ export default function homepage() {
       </section>
 
 
-          <section className="relative text-center px-6">
+      <section className="relative text-center px-6">
         <div className="pointer-events-none absolute left-0 w-full h-10 bg-gradient-to-b from-black/10 to-transparent" />
 
         <div className="flex flex-row flex-wrap items-center justify-center gap-12 py-12">
@@ -197,6 +197,27 @@ export default function homepage() {
             priority
           />
 
+
+          <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-[50px] w-[300px] z-[100]">
+            {/* Wood image */}
+            <Image
+              src="/title-wood.png"
+              alt="Wood Plate"
+              width={740}
+              height={740}
+              className="h-auto w-full object-contain"
+              priority
+            />
+
+            {/* Title overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pt-6">
+              <h1 className="text-3xl font-bold text-white drop-shadow">
+                {featured?.name || "Featured Product"}
+              </h1>
+            </div>
+          </div>
+
+
           {/* decor */}
           <div className="pointer-events-none absolute inset-0 z-10">
             <div className="absolute left-0 bottom-0 w-[240px] sm:w-[320px] md:w-[380px]">
@@ -208,6 +229,12 @@ export default function homepage() {
                 className="h-auto w-full object-contain"
               />
             </div>
+
+
+
+
+
+
 
             <div className="absolute right-0 bottom-0 w-[240px] sm:w-[320px] md:w-[380px]">
               <Image
@@ -228,6 +255,8 @@ export default function homepage() {
                 className="h-auto w-full object-contain"
               />
             </div>
+
+
 
             <div className="absolute left-1/2 bottom-0 -translate-x-1/2 w-[900px]">
               <Image
