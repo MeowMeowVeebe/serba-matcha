@@ -210,7 +210,7 @@ export default function homepage() {
             />
 
             {/* Title overlay */}
-            <div className="absolute inset-0 flex items-center justify-center pt-6">
+            <div className="absolute inset-0 flex items-center justify-center pt-6 font-['Ink-Jinkies']">
               <h1 className="text-3xl font-bold text-white drop-shadow">
                 {featured?.name || "Featured Product"}
               </h1>
