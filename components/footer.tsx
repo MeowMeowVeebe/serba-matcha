@@ -9,9 +9,9 @@ const socials = [
 ];
 
 const quickLinks = [
-  { label: "Menu", href: "/client_side/menu" },
-  { label: "Our Team", href: "/client_side/our_team" },
-  { label: "About", href: "/client_side/about_us" },
+  { label: "Menu", href: "/menu" },
+  { label: "Our Team", href: "/our_team" },
+  { label: "About", href: "/about_us" },
   { label: "Contact", href: "mailto:hello@serbamatcha.com" },
 ];
 

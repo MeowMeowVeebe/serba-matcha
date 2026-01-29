@@ -93,7 +93,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
       showAlert("Logout berhasil.", { variant: "info" });
     } finally {
       setIsLoggingOut(false);
-      router.push("/login");
+      router.push("/dashboard/login");
     }
   };
 
@@ -126,7 +126,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
       showAlert(res.message ?? "Logout semua device berhasil.", { variant: "success" });
     } finally {
       setIsLoggingOutAll(false);
-      router.push("/login");
+      router.push("/dashboard/login");
     }
   };
 
@@ -142,7 +142,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
         title: "Main",
         items: [
           {
-            href: "/dashboard",
+            href: "/dashboard/home",
             label: "Dashboard",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -154,7 +154,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
             ),
           },
           {
-            href: "/client_side/home",
+            href: "/home",
             label: "Client Site",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -178,7 +178,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
             ),
           },
           {
-            href: "/settings",
+            href: "/dashboard/settings",
             label: "Settings",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -190,7 +190,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
             ),
           },
           {
-            href: "/security",
+            href: "/dashboard/security",
             label: "Security Center",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -210,9 +210,9 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
         sections.push({
           title: "Admin",
           items: [
-            { href: "/admin/users", label: "Users", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"/></svg> },
-            { href: "/admin/rbac", label: "RBAC", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg> },
-            { href: "/admin/audit-logs", label: "Audit Logs", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> },
+            { href: "/dashboard/admin/users", label: "Users", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"/></svg> },
+            { href: "/dashboard/admin/rbac", label: "RBAC", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg> },
+            { href: "/dashboard/admin/audit-logs", label: "Audit Logs", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg> },
           ],
         });
       }
@@ -222,8 +222,8 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
         sections.push({
           title: "Seller",
           items: [
-            { href: "/seller/dashboard", label: "Seller Dashboard", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M3 5h18v4H3V5zm0 6h18v8H3v-8zm2 2v4h14v-4H5z"/></svg> },
-            { href: "/seller/products", label: "Products", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M3 4h18v2H3V4zm0 4h18v12H3V8zm2 2v8h14v-8H5zm3 1h4v2H8v-2z"/></svg> },
+            { href: "/dashboard/seller/dashboard", label: "Seller Dashboard", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M3 5h18v4H3V5zm0 6h18v8H3v-8zm2 2v4h14v-4H5z"/></svg> },
+            { href: "/dashboard/seller/products", label: "Products", icon: <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden><path fill="currentColor" d="M3 4h18v2H3V4zm0 4h18v12H3V8zm2 2v8h14v-8H5zm3 1h4v2H8v-2z"/></svg> },
           ],
         });
       }
@@ -320,7 +320,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
           message={loadError ?? undefined}
           action={
             loadError ? (
-              <Link className="secondary-btn" href="/login">
+              <Link className="secondary-btn" href="/dashboard/login">
                 Ke Login
               </Link>
             ) : null
@@ -336,3 +336,7 @@ export default function AccountShell({ title, description, breadcrumbs, actions,
     </>
   );
 }
+
+
+
+

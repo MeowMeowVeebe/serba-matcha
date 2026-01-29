@@ -11,7 +11,7 @@ export default function Header() {
   const [showBg, setShowBg] = useState(false);
 
   const pathname = usePathname();
-  const isHome = pathname === "/client_side/home" || pathname === "/home";
+  const isHome = pathname === "/" || pathname === "/home";
   const router = useRouter();
   const { user } = useUser();
 
@@ -47,10 +47,7 @@ export default function Header() {
           animate={{ opacity: showBg ? 0 : 1 }}
         />
 
-        <Link
-          href="/client_side"
-          className="text-white hover:text-white/80"
-        >
+        <Link href="/" className="text-white hover:text-white/80">
 
 <div className="flex flex-row items-center gap-2"> 
            <Image src="/logo/logo-cat.png" alt="Serba Matcha Logo" width={60} height={60} />
@@ -61,10 +58,10 @@ export default function Header() {
 
         <nav className="hidden items-center gap-6 lg:gap-8 md:flex flex justify-between">
           {[
-            { href: "/client_side/home", label: "Home" },
-            { href: "/client_side/our_team", label: "Our Teams" },
-            { href: "/client_side/about_us", label: "About" },
-            { href: "/client_side/menu", label: "Menu" },
+            { href: "/home", label: "Home" },
+            { href: "/our_team", label: "Our Teams" },
+            { href: "/about_us", label: "About" },
+            { href: "/menu", label: "Menu" },
           ].map((item) => (
             <Link key={item.href} href={item.href} className="relative group font-medium text-white">
               {item.label}
@@ -85,7 +82,7 @@ export default function Header() {
           <div className="flex flex-row items-center">
             {user ? (
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("dashboard/home")}
                 className="flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1.5 text-white backdrop-blur transition hover:bg-white/20"
                 title="Go to Dashboard"
               >
@@ -102,7 +99,7 @@ export default function Header() {
               </button>
             ) : (
               <button
-                onClick={() => router.push("/login")}
+                onClick={() => router.push("dashboard/login")}
                 className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-white backdrop-blur transition hover:bg-white/20 text-sm"
               >
                 <img src="/Profile.png" alt="Login" className="h-8 w-8 rounded-full" />
@@ -114,7 +111,7 @@ export default function Header() {
           <div className="hidden sm:block w-px h-6 bg-white" />
 
           <div>
-            <Link href="/client_side/cart">
+            <Link href="/cart">
               <div className="flex flex-column items-center">
                 <img src="/cart.png" alt="Cart" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full" />
                 <p className="text-xs sm:text-sm text-white"> Cart</p>
@@ -143,12 +140,12 @@ export default function Header() {
                 }`}
               >
                 {[
-                  { href: "/client_side/home", label: "Home" },
-                  { href: "/client_side/our_team", label: "Our Team" },
-                  { href: "/client_side/about_us", label: "About" },
-                  { href: "/client_side/menu", label: "Menu" },
+                  { href: "/home", label: "Home" },
+                  { href: "/our_team", label: "Our Team" },
+                  { href: "/about_us", label: "About" },
+                  { href: "/menu", label: "Menu" },
                   { href: "/dashboard/transactions", label: "Transactions" },
-                  { href: "/client_side/cart", label: "Cart" },
+                  { href: "/cart", label: "Cart" },
                 ].map((item) => (
                   <DropdownMenu.Item
                     key={item.href}

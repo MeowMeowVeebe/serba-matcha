@@ -40,7 +40,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
       const res = await me();
       if (!mounted) return;
       if (!res.ok) {
-        router.push("/login");
+        router.push("/dashboard/login");
         return;
       }
       setUser(res.user);
@@ -58,7 +58,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
         title: "Main",
         items: [
           {
-            href: "/dashboard",
+            href: "/dashboard/home",
             label: "Dashboard",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -70,7 +70,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
             ),
           },
           {
-            href: "/settings",
+            href: "/dashboard/settings",
             label: "Settings",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -82,7 +82,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
             ),
           },
           {
-            href: "/security",
+            href: "/dashboard/security",
             label: "Security Center",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -99,7 +99,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
         title: "Admin",
         items: [
           {
-            href: "/admin/users",
+            href: "/dashboard/admin/users",
             label: "Users",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -111,7 +111,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
             ),
           },
           {
-            href: "/admin/audit-logs",
+            href: "/dashboard/admin/audit-logs",
             label: "Audit Logs",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -123,7 +123,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
             ),
           },
           {
-            href: "/admin/rbac",
+            href: "/dashboard/admin/rbac",
             label: "RBAC",
             icon: (
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
@@ -147,30 +147,30 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
       await logout();
     } finally {
       setIsLoggingOut(false);
-      router.push("/login");
+      router.push("/dashboard/login");
     }
   };
 
   const commandBarItems = useMemo<CommandBarItem[]>(() => {
-    if (pathname.startsWith("/admin/users")) {
+    if (pathname.startsWith("/dashboard/admin/users")) {
       return [
-        { label: "Invite User", href: "/admin/users", variant: "primary" },
-        { label: "Manage Roles", href: "/admin/rbac", variant: "secondary" },
-        { label: "Audit Logs", href: "/admin/audit-logs", variant: "ghost" },
+        { label: "Invite User", href: "/dashboard/admin/users", variant: "primary" },
+        { label: "Manage Roles", href: "/dashboard/admin/rbac", variant: "secondary" },
+        { label: "Audit Logs", href: "/dashboard/admin/audit-logs", variant: "ghost" },
       ];
     }
-    if (pathname.startsWith("/admin/audit-logs")) {
+    if (pathname.startsWith("/dashboard/admin/audit-logs")) {
       return [
-        { label: "Export Logs", href: "/admin/audit-logs", variant: "primary" },
-        { label: "Retry Failed", href: "/admin/audit-logs", variant: "secondary" },
-        { label: "RBAC", href: "/admin/rbac", variant: "ghost" },
+        { label: "Export Logs", href: "/dashboard/admin/audit-logs", variant: "primary" },
+        { label: "Retry Failed", href: "/dashboard/admin/audit-logs", variant: "secondary" },
+        { label: "RBAC", href: "/dashboard/admin/rbac", variant: "ghost" },
       ];
     }
-    if (pathname.startsWith("/admin/rbac")) {
+    if (pathname.startsWith("/dashboard/admin/rbac")) {
       return [
-        { label: "Add Role", href: "/admin/rbac", variant: "primary" },
-        { label: "Permissions", href: "/admin/rbac", variant: "secondary" },
-        { label: "Users", href: "/admin/users", variant: "ghost" },
+        { label: "Add Role", href: "/dashboard/admin/rbac", variant: "primary" },
+        { label: "Permissions", href: "/dashboard/admin/rbac", variant: "secondary" },
+        { label: "Users", href: "/dashboard/admin/users", variant: "ghost" },
       ];
     }
     return [];
@@ -197,7 +197,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
       };
     }
 
-    if (pathname.startsWith("/admin/users")) {
+    if (pathname.startsWith("/dashboard/admin/users")) {
       return {
         title: "Users",
         description: "Kelola roles per user",
@@ -206,7 +206,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
       };
     }
 
-    if (pathname.startsWith("/admin/audit-logs")) {
+    if (pathname.startsWith("/dashboard/admin/audit-logs")) {
       return {
         title: "Audit Logs",
         description: "Cari dan export audit log",
@@ -215,7 +215,7 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
       };
     }
 
-    if (pathname.startsWith("/admin/rbac")) {
+    if (pathname.startsWith("/dashboard/admin/rbac")) {
       return {
         title: "RBAC",
         description: "Kelola roles & permissions",
@@ -320,3 +320,6 @@ export default function AdminShell({ title, description, breadcrumbs, actions, c
     </>
   );
 }
+
+
+
