@@ -1,10 +1,11 @@
 import type { NextConfig } from "next";
 
+module.exports = { output: "standalone" };
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
 
-    output: "standalone",
+   
 
   // Performance optimizations
   reactStrictMode: true,
