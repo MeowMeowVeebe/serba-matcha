@@ -9,6 +9,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+FROM node:20-slim
 
 RUN node -v && npm -v && ls -la
 RUN npm run build --loglevel verbose
@@ -16,7 +17,8 @@ RUN npx prisma generate
 
 # If Prisma is used, uncomment:
 # RUN npx prisma generate
-RUN npm run build || (echo "==== BUILD FAILED ====" && cat /app/.next/trace 2>/dev/null || true && exit 1)
+RUN npm run build > /tmp/build.log 2>&1 || (echo "===== BUILD LOG =====" && tail -n 200 /tmp/build.log && exit 1)
+
 
 
 # run
