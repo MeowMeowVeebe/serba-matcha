@@ -11,6 +11,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
 RUN npm run build
+ARG CACHE_BUST=1
 
 # run
 FROM node:20-alpine AS runner
