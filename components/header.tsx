@@ -144,7 +144,6 @@ export default function Header() {
                   { href: "/our_team", label: "Our Team" },
                   { href: "/about_us", label: "About" },
                   { href: "/menu", label: "Menu" },
-                  { href: "/dashboard/transactions", label: "Transactions" },
                   { href: "/cart", label: "Cart" },
                 ].map((item) => (
                   <DropdownMenu.Item
