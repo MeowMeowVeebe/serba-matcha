@@ -1,0 +1,220 @@
+:root {
+  --light-bg: #F7F9F7;
+  --light-card: #FFFFFF;
+  --light-sidebar: #FFFFFF;
+  --light-sidebar-border: #E8F5E9;
+  --light-header: #FFFFFF;
+  --light-text-primary: #222222;
+  --light-text-secondary: #555555;
+  --light-primary-btn: #6B9C6F;
+  --light-hover-btn: #7FB783;
+  --light-table-header: #A8D5A3;
+  --light-table-row-hover: #F1F8F1;
+
+  --dark-bg: #1A1F1A;
+  --dark-card: #2D3A2D;
+  --dark-sidebar: #232B23;
+  --dark-header: #2D3A2D;
+  --dark-text-primary: #FFFFFF;
+  --dark-text-secondary: #E5E5E5;
+  --dark-primary-btn: #7FB783;
+  --dark-hover-btn: #A8D5A3;
+  --dark-table-header: #6B9C6F;
+  --dark-table-row-hover: #3A4A3A;
+  --dark-sidebar-link: #FFFFFF;
+  --dark-chart-line: #A8D5A3;
+
+  --card-radius: 12px;
+  --shadow: 0 4px 12px rgba(0,0,0,0.1);
+  --transition: 0.3s ease;
+  --font-family: 'Inter', sans-serif;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+}
+body {
+  display: flex;
+  min-height: 100vh;
+  transition: background-color var(--transition), color var(--transition);
+}
+.sidebar {
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+.sidebar h2 {
+  margin-bottom: 40px;
+  font-weight: 700;
+  font-size: 24px;
+}
+.sidebar a {
+  text-decoration: none;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: var(--card-radius);
+  transition: background var(--transition), color var(--transition);
+}
+.header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header button {
+  padding: 8px 12px;
+  border-radius: var(--card-radius);
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.main {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.card {
+  flex: 1 1 200px;
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+.card h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+.card p {
+  font-size: 14px;
+}
+.table-container {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+thead th {
+  padding: 12px 15px;
+  text-align: left;
+}
+tbody td {
+  padding: 12px 15px;
+}
+tbody tr:nth-child(even) {
+  opacity: 0.95;
+}
+tbody tr:hover {
+  transition: background var(--transition);
+}
+body.light {
+  background-color: var(--light-bg);
+  color: var(--light-text-primary);
+}
+body.light .card {
+  background-color: var(--light-card);
+  color: var(--light-text-primary);
+}
+body.light .sidebar {
+  background-color: var(--light-sidebar);
+  border-right: 1px solid var(--light-sidebar-border);
+  color: var(--light-text-primary);
+}
+body.light .sidebar a {
+  color: var(--light-text-primary);
+}
+body.light .sidebar a:hover {
+  background-color: var(--light-hover-btn);
+  color: #fff;
+}
+body.light .header {
+  background-color: var(--light-header);
+}
+body.light button {
+  background-color: var(--light-primary-btn);
+  color: #fff;
+}
+body.light button:hover {
+  background-color: var(--light-hover-btn);
+}
+body.light table thead {
+  background-color: var(--light-table-header);
+  color: #fff;
+}
+body.light table tbody tr:hover {
+  background-color: var(--light-table-row-hover);
+}
+body.dark {
+  background-color: var(--dark-bg);
+  color: var(--dark-text-primary);
+}
+body.dark .card {
+  background-color: var(--dark-card);
+  color: var(--dark-text-primary);
+}
+body.dark .sidebar {
+  background-color: var(--dark-sidebar);
+  color: var(--dark-text-primary);
+}
+body.dark .sidebar a {
+  color: var(--dark-sidebar-link);
+}
+body.dark .sidebar a:hover {
+  background-color: var(--dark-hover-btn);
+  color: #121926;
+}
+body.dark .header {
+  background-color: var(--dark-header);
+}
+body.dark button {
+  background-color: var(--dark-primary-btn);
+  color: #121926;
+}
+body.dark button:hover {
+  background-color: var(--dark-hover-btn);
+}
+body.dark table thead {
+  background-color: var(--dark-table-header);
+  color: #fff;
+}
+body.dark table tbody tr:hover {
+  background-color: var(--dark-table-row-hover);
+}
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .sidebar h2 {
+    display: none;
+  }
+  .cards {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,160 @@
+/* Journey Map Visualization */
+.journey-map-container {
+  position: relative;
+  background: var(--color-bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.journey-map {
+  display: block;
+  cursor: grab;
+}
+
+.journey-map:active {
+  cursor: grabbing;
+}
+
+.journey-map__bg {
+  fill: transparent;
+}
+
+.journey-map__controls {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  z-index: 10;
+}
+
+.journey-map__controls button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.journey-map__controls button:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Journey Nodes */
+.journey-node {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.journey-node__shape {
+  transition: all 0.2s;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.journey-node:hover .journey-node__shape {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) brightness(1.1);
+}
+
+.journey-node--selected .journey-node__shape {
+  stroke: white;
+  stroke-width: 3;
+}
+
+.journey-node__tooltip {
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Journey Connections */
+.journey-connection__line {
+  transition: stroke 0.2s, stroke-opacity 0.2s;
+}
+
+/* Detail Panel */
+.journey-map__detail {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  width: 280px;
+  padding: 1.25rem;
+  animation: slideInLeft 0.3s;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.journey-map__detail-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.journey-map__detail h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.journey-map__detail p {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.journey-map__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.journey-map__metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.journey-map__metric-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.journey-map__metric-label {
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

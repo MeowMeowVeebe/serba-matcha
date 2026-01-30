@@ -1,0 +1,116 @@
+{
+
+  "name": "serba-matcha",
+
+  "version": "0.1.0",
+
+  "private": true,
+
+  "scripts": {
+
+    "dev": "tsx scripts/dev.ts",
+
+    "build": "next build",
+
+    "start": "next start",
+
+    "lint": "eslint",
+
+    "test": "vitest run --maxWorkers=1",
+
+    "test:watch": "vitest",
+
+    "test:ci": "vitest run --reporter=verbose --maxWorkers=1",
+
+    "test:coverage": "vitest run --coverage --maxWorkers=1",
+
+    "prisma:generate": "prisma generate",
+
+    "prisma:migrate": "prisma migrate dev",
+
+    "prisma:dbpush:sqlite": "prisma db push --schema prisma/schema.sqlite.prisma",
+
+    "prisma:generate:sqlite": "prisma generate --schema prisma/schema.sqlite.prisma",
+
+    "seed": "node ./node_modules/tsx/dist/cli.mjs scripts/seed.ts",
+
+    "audit:cleanup": "node ./node_modules/tsx/dist/cli.mjs scripts/cleanupAuditLogs.ts",
+
+    "audit:exports": "node ./node_modules/tsx/dist/cli.mjs scripts/processAuditLogExports.ts",
+
+    "audit:exports:cleanup": "node ./node_modules/tsx/dist/cli.mjs scripts/cleanupExportFiles.ts",
+
+    "prisma:generate:mysql": "prisma generate --schema prisma/schema.mysql.prisma",
+
+    "prisma:migrate:mysql": "prisma migrate dev --schema prisma/schema.mysql.prisma"
+
+  },
+
+  "dependencies": {
+
+    "@prisma/client": "^6.2.1",
+
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+
+    "chart.js": "^4.5.1",
+
+    "framer-motion": "^12.29.2",
+
+    "midtrans-client": "^1.4.3",
+
+    "mysql2": "^3.16.2",
+
+    "next": "^16.1.6",
+
+    "nodemailer": "^7.0.0",
+
+    "react": "19.2.3",
+
+    "react-dom": "19.2.3",
+
+    "sharp": "^0.34.5",
+
+    "swr": "^2.3.8"
+
+  },
+
+  "devDependencies": {
+
+    "@babel/parser": "^7.28.6",
+
+    "@tailwindcss/postcss": "^4",
+
+    "@types/node": "^20.19.30",
+
+    "@types/react": "^19",
+
+    "@types/react-dom": "^19",
+
+    "@types/supertest": "^6.0.3",
+
+    "@vitest/coverage-v8": "^4.0.17",
+
+    "eslint": "^9",
+
+    "eslint-config-next": "16.1.1",
+
+    "next-test-api-route-handler": "^5.0.3",
+
+    "prisma": "^6.2.1",
+
+    "supertest": "^7.2.2",
+
+    "tailwindcss": "^4",
+
+    "ts-node": "^10.9.2",
+
+    "tsx": "^4.21.0",
+
+    "typescript": "^5.9.3",
+
+    "vitest": "^4.0.17"
+
+  }
+
+}
+

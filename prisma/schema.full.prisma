@@ -1,0 +1,696 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String               @id @default(cuid())
+  email         String               @unique
+  name          String
+  role          UserSimpleRole       @default(customer)
+  phone         String?
+  avatar        String?              @db.LongText
+  passwordAlgo  String
+  passwordIter  Int
+  passwordSalt  String
+  passwordHash  String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  resetTokens   PasswordResetToken[]
+  refreshTokens RefreshToken[]
+  roles         UserRole[]
+  transactions  Transaction[]
+
+  @@index([createdAt])
+}
+
+enum UserSimpleRole {
+  admin
+  customer
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model RateLimitEvent {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String
+  userId       String?
+  ip           String?
+  targetUserId String?
+  targetEmail  String?
+  resource     String?
+  statusCode   Int?
+  meta         String?
+  metaPreview  String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([userId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([targetEmail, createdAt])
+  @@index([resource, createdAt])
+  @@index([statusCode, createdAt])
+  @@index([targetEmail, statusCode, createdAt])
+  @@index([resource, statusCode, createdAt])
+}
+
+model Permission {
+  id    String           @id @default(cuid())
+  name  String           @unique
+  roles RolePermission[]
+
+  @@index([name])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@index([name])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserRole {
+  id     String @id @default(cuid())
+  userId String
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLogExportJob {
+  id                String          @id @default(cuid())
+  status            ExportJobStatus @default(pending)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  requestedByUserId String?
+  filters           String
+  fileName          String?
+  mimeType          String?
+  filePath          String?
+  rowsWritten       Int             @default(0)
+  leaseUntil        DateTime?
+  attempts          Int             @default(0)
+  csvBase64         String?
+  error             String?
+
+  @@index([status, createdAt])
+  @@index([requestedByUserId, createdAt])
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  customerId   String?
+  customerName String
+  item         String
+  total        Int
+  status       OrderStatus @default(pending)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([createdAt])
+  @@index([status, createdAt])
+}
+
+model DailyRevenue {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  revenue   Int
+  orders    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Insight {
+  id          String   @id @default(cuid())
+  icon        String
+  title       String
+  description String
+  value       String
+  change      String?
+  category    String   @default("general")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, isActive])
+  @@index([sortOrder])
+}
+
+model UsageTrend {
+  id        String   @id @default(cuid())
+  label     String
+  value     String
+  change    String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model DailyUsage {
+  id        String   @id @default(cuid())
+  day       String
+  date      DateTime @unique
+  users     Int
+  sessions  Int
+  pageViews Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model EngagementPulse {
+  id        String   @id @default(cuid())
+  time      String
+  label     String
+  change    String
+  icon      String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model TopCTA {
+  id        String   @id @default(cuid())
+  label     String
+  clicks    Int
+  rate      String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([clicks])
+}
+
+model CustomerJourney {
+  id         String   @id @default(cuid())
+  persona    String
+  icon       String
+  steps      String
+  completion Int
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model FeatureExperiment {
+  id        String           @id @default(cuid())
+  name      String
+  icon      String?
+  status    ExperimentStatus @default(planning)
+  result    String?
+  owner     String?
+  progress  Int              @default(0)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([status])
+}
+
+model ComponentLib {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  status      String   @default("stable")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+}
+
+model FeatureSpotlight {
+  id          String   @id @default(cuid())
+  icon        String
+  name        String
+  description String
+  adoption    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model TeamTestimonial {
+  id        String   @id @default(cuid())
+  team      String
+  quote     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FeatureFlag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  enabled   Boolean  @default(false)
+  users     String   @default("0%")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled])
+}
+
+model AlertRule {
+  id              String      @id @default(cuid())
+  name            String
+  condition       String?
+  channel         String
+  status          AlertStatus @default(draft)
+  triggered       Int         @default(0)
+  lastTriggeredAt DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([status])
+}
+
+model Service {
+  id          String        @id @default(cuid())
+  name        String
+  status      ServiceStatus @default(operational)
+  uptime      String        @default("99.9%")
+  lastCheckAt DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+}
+
+model QueueMetric {
+  id        String      @id @default(cuid())
+  name      String
+  count     Int         @default(0)
+  status    QueueStatus @default(healthy)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([status])
+}
+
+model Incident {
+  id         String           @id @default(cuid())
+  incidentId String           @unique
+  time       String
+  detail     String
+  severity   IncidentSeverity @default(low)
+  status     IncidentStatus   @default(investigating)
+  resolvedAt DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+model ActionItem {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  owner       String?
+  priority    ActionPriority @default(medium)
+  completed   Boolean        @default(false)
+  completedAt DateTime?
+  dueDate     DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([priority])
+  @@index([completed])
+  @@index([dueDate])
+}
+
+model PlaybookStep {
+  id          String               @id @default(cuid())
+  title       String
+  description String?
+  sortOrder   Int                  @default(0)
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  completions PlaybookCompletion[]
+
+  @@index([sortOrder])
+  @@index([isActive])
+}
+
+model PlaybookCompletion {
+  id        String       @id @default(cuid())
+  stepId    String
+  userId    String
+  date      DateTime     @default(now())
+  createdAt DateTime     @default(now())
+  step      PlaybookStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@unique([stepId, userId, date])
+  @@index([userId, date])
+}
+
+model Feedback {
+  id        String            @id @default(cuid())
+  title     String
+  detail    String
+  sentiment FeedbackSentiment @default(mixed)
+  source    String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([sentiment])
+  @@index([createdAt])
+}
+
+model PricingExperiment {
+  id        String    @id @default(cuid())
+  title     String
+  value     String
+  change    String
+  isActive  Boolean   @default(true)
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([isActive])
+}
+
+model ReleaseNote {
+  id        String   @id @default(cuid())
+  version   String
+  date      DateTime
+  items     String
+  category  String   @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([category])
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  date        String
+  title       String
+  note        String?
+  scheduledAt DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive])
+  @@index([scheduledAt])
+}
+
+model TeamRitual {
+  id        String   @id @default(cuid())
+  title     String
+  detail    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([isActive])
+}
+
+model CustomerSuccessMetric {
+  id        String   @id @default(cuid())
+  title     String
+  value     String
+  change    String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model RevenueMetric {
+  id        String   @id @default(cuid())
+  title     String
+  value     String
+  change    String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model HeatmapHotspot {
+  id        String   @id @default(cuid())
+  area      String
+  clicks    Int      @default(0)
+  rate      String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([clicks])
+}
+
+model DeviceStat {
+  id         String   @id @default(cuid())
+  deviceType String
+  percentage Int
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([date])
+}
+
+model HeatmapSummary {
+  id          String   @id @default(cuid())
+  totalClicks Int      @default(0)
+  avgSession  String
+  scrollDepth Int      @default(0)
+  date        DateTime @unique @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+}
+
+model SecurityEvent {
+  id        String                @id @default(cuid())
+  event     String
+  severity  SecurityEventSeverity @default(info)
+  userId    String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime              @default(now())
+
+  @@index([severity])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model UserSession {
+  id         String    @id @default(cuid())
+  userId     String
+  device     String
+  location   String?
+  ip         String?
+  userAgent  String?
+  isActive   Boolean   @default(true)
+  lastSeenAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([lastSeenAt])
+}
+
+model SellerProduct {
+  id           String        @id @default(cuid())
+  name         String
+  price        Int
+  stock        Int
+  category     String
+  description  String
+  image        String        @db.LongText
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@index([updatedAt])
+}
+
+model Transaction {
+  id              String         @id @default(cuid())
+  orderId         String?        @unique
+  userId          String?
+  productId       String?
+  productName     String
+  price           Int
+  grossAmount     Int?
+  shippingCost    Int            @default(0)
+  status          String         @default("pending")
+  snapToken       String?
+  snapRedirectUrl String?
+  customerName    String?
+  customerEmail   String?
+  customerPhone   String?
+  items           Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  product         SellerProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([productId], map: "Transaction_productId_fkey")
+  @@index([userId, createdAt])
+}
+
+enum ExportJobStatus {
+  pending
+  running
+  completed
+  failed
+  cancelled
+}
+
+enum OrderStatus {
+  pending
+  preparing
+  delivered
+  cancelled
+}
+
+enum ExperimentStatus {
+  planning
+  testing
+  running
+  paused
+  winner
+  completed
+}
+
+enum AlertStatus {
+  active
+  draft
+  disabled
+}
+
+enum ServiceStatus {
+  operational
+  degraded
+  outage
+  maintenance
+}
+
+enum QueueStatus {
+  healthy
+  stable
+  watch
+  critical
+}
+
+enum IncidentSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum IncidentStatus {
+  investigating
+  identified
+  mitigated
+  resolved
+}
+
+enum ActionPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum FeedbackSentiment {
+  positive
+  mixed
+  negative
+}
+
+enum SecurityEventSeverity {
+  info
+  warning
+  danger
+}

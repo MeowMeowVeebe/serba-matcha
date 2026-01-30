@@ -1,0 +1,646 @@
+/* Avatar System */
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar--xs { width: 24px; height: 24px; font-size: 0.625rem; }
+.avatar--sm { width: 32px; height: 32px; font-size: 0.75rem; }
+.avatar--md { width: 40px; height: 40px; font-size: 0.875rem; }
+.avatar--lg { width: 56px; height: 56px; font-size: 1rem; }
+.avatar--xl { width: 80px; height: 80px; font-size: 1.5rem; }
+
+.avatar--clickable { cursor: pointer; }
+
+.avatar__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar__initials {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+}
+
+.avatar__status {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 25%;
+  height: 25%;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--color-bg-elevated);
+}
+
+.avatar__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--color-error);
+  color: white;
+  font-size: 0.625rem;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Avatar Group */
+.avatar-group {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.avatar-group .avatar {
+  margin-left: -8px;
+  border: 2px solid var(--color-bg-elevated);
+}
+
+.avatar-group .avatar:last-child {
+  margin-left: 0;
+}
+
+.avatar__overflow {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+/* Profile Card */
+.profile-card {
+  padding: 1.5rem;
+  background: var(--color-bg-elevated);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+}
+
+.profile-card__header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.profile-card__info {
+  flex: 1;
+}
+
+.profile-card__name {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+}
+
+.profile-card__role {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.profile-card__email {
+  margin: 0.25rem 0 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.profile-card__status-section {
+  position: relative;
+  margin-bottom: 1.25rem;
+}
+
+.profile-card__status-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.profile-card__status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.profile-card__status-arrow {
+  margin-left: auto;
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+}
+
+.profile-card__status-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.profile-card__status-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.profile-card__status-option:hover,
+.profile-card__status-option.active {
+  background: var(--color-bg);
+}
+
+.profile-card__custom-status {
+  padding: 0.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.profile-card__custom-status input {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+
+.profile-card__stats {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+.profile-card__stat {
+  flex: 1;
+  text-align: center;
+}
+
+.profile-card__stat-value {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.profile-card__stat-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.profile-card__badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.profile-card__badge {
+  padding: 0.375rem 0.625rem;
+  background: var(--color-bg);
+  border-radius: 20px;
+  font-size: 0.875rem;
+}
+
+/* Team Presence */
+.team-presence {
+  padding: 1rem;
+  background: var(--color-bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.team-presence__title {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+}
+
+.team-presence__group {
+  margin-bottom: 1rem;
+}
+
+.team-presence__group:last-child {
+  margin-bottom: 0;
+}
+
+.team-presence__group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.team-presence__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.team-presence__members {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 1rem;
+}
+
+.team-presence__member {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-presence__member-name {
+  font-size: 0.875rem;
+}
+
+/* Vim Navigation */
+.vim-mode-indicator {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.875rem;
+  z-index: 1000;
+}
+
+.vim-mode-indicator--normal { border-color: var(--color-primary); }
+.vim-mode-indicator--insert { border-color: var(--color-success); }
+.vim-mode-indicator--visual { border-color: var(--color-warning); }
+
+.vim-mode-indicator__mode {
+  font-weight: 700;
+}
+
+.vim-mode-indicator--normal .vim-mode-indicator__mode { color: var(--color-primary); }
+.vim-mode-indicator--insert .vim-mode-indicator__mode { color: var(--color-success); }
+.vim-mode-indicator--visual .vim-mode-indicator__mode { color: var(--color-warning); }
+
+.vim-mode-indicator__buffer {
+  color: var(--color-text-muted);
+}
+
+.vim-selected {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Vim Cheatsheet */
+.vim-cheatsheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.vim-cheatsheet {
+  width: 500px;
+  max-height: 80vh;
+  background: var(--color-bg-elevated);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.vim-cheatsheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.vim-cheatsheet__header h3 { margin: 0; }
+
+.vim-cheatsheet__header button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.vim-cheatsheet__content {
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: calc(80vh - 120px);
+}
+
+.vim-cheatsheet__section {
+  margin-bottom: 1.5rem;
+}
+
+.vim-cheatsheet__section h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.vim-cheatsheet__list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.vim-cheatsheet__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vim-cheatsheet__item kbd {
+  min-width: 32px;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.vim-cheatsheet__item span {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.vim-cheatsheet__footer {
+  padding: 0.75rem 1rem;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.vim-cheatsheet__footer kbd {
+  padding: 0.125rem 0.375rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  font-size: 0.6875rem;
+}
+
+.vim-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.vim-toggle--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+/* Inline Editor */
+.inline-edit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inline-edit--display {
+  padding: 0.375rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.inline-edit--display:hover {
+  background: var(--color-bg);
+}
+
+.inline-edit--disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.inline-edit--disabled:hover {
+  background: none;
+}
+
+.inline-edit__placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.inline-edit__icon {
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.inline-edit--display:hover .inline-edit__icon {
+  opacity: 1;
+}
+
+.inline-edit--editing {
+  flex-wrap: wrap;
+}
+
+.inline-edit__input {
+  padding: 0.375rem 0.5rem;
+  background: var(--color-bg);
+  border: 2px solid var(--color-primary);
+  border-radius: 6px;
+  font-size: inherit;
+  color: var(--color-text);
+  min-width: 100px;
+}
+
+.inline-edit__input--error {
+  border-color: var(--color-error);
+}
+
+.inline-edit__error {
+  width: 100%;
+  font-size: 0.75rem;
+  color: var(--color-error);
+  margin-top: 0.25rem;
+}
+
+.inline-edit__actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.inline-edit__btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.inline-edit__btn--save {
+  background: var(--color-success);
+  color: white;
+}
+
+.inline-edit__btn--cancel {
+  background: var(--color-error);
+  color: white;
+}
+
+/* Editable Row */
+.editable-row--dirty {
+  background: rgba(127, 183, 131, 0.1);
+}
+
+.editable-row__save {
+  padding: 0.375rem 0.75rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* Batch Editor */
+.batch-editor__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.batch-editor__selection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.batch-editor__batch-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.batch-editor__batch-controls select,
+.batch-editor__batch-controls input {
+  padding: 0.375rem 0.5rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+
+.batch-editor__batch-controls button {
+  padding: 0.375rem 0.75rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.batch-editor__save-all {
+  padding: 0.375rem 0.75rem;
+  background: var(--color-success);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.batch-editor__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.batch-editor__table th,
+.batch-editor__table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.batch-editor__table tr.selected {
+  background: rgba(127, 183, 131, 0.1);
+}
+
+/* Auto-save Indicator */
+.autosave-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.autosave-indicator__spinner {
+  animation: spin 1s linear infinite;
+}
+
+.autosave-indicator__dot {
+  width: 8px;
+  height: 8px;
+  background: var(--color-warning);
+  border-radius: 50%;
+}
+
+.autosave-indicator--saving {
+  color: var(--color-primary);
+}

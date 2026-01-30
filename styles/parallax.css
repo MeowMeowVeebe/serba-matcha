@@ -1,0 +1,175 @@
+/* Parallax Effects */
+.parallax-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.parallax-layer {
+  transition: transform 0.1s ease-out;
+}
+
+.parallax-card {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.floating-element {
+  position: absolute;
+  pointer-events: none;
+  animation: float-around 20s infinite ease-in-out;
+}
+
+@keyframes float-around {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(50px, -30px) rotate(90deg); }
+  50% { transform: translate(20px, 50px) rotate(180deg); }
+  75% { transform: translate(-30px, 20px) rotate(270deg); }
+}
+
+/* Interactive Card Micro-interactions */
+.interactive-card {
+  position: relative;
+  background: var(--color-bg-elevated);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+.interactive-card--elevated {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.interactive-card--bordered {
+  border: 1px solid var(--color-border);
+}
+
+.interactive-card--glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.interactive-card--clickable {
+  cursor: pointer;
+}
+
+.interactive-card--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.interactive-card__glow {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    rgba(127, 183, 131, 0.15) 0%,
+    transparent 60%
+  );
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.interactive-card--hovered .interactive-card__glow {
+  opacity: 1;
+}
+
+.interactive-card__border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  pointer-events: none;
+}
+
+.interactive-card--hovered .interactive-card__border {
+  border-color: var(--color-primary);
+}
+
+.interactive-card__content {
+  position: relative;
+  z-index: 1;
+  padding: 1.5rem;
+}
+
+.interactive-card__actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(transparent, var(--color-bg-elevated));
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.interactive-card__actions--visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Metric Card Interactive */
+.metric-card-interactive {
+  min-width: 200px;
+}
+
+.metric-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.metric-card__icon {
+  font-size: 1.5rem;
+}
+
+.metric-card__change {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.metric-card__change--positive {
+  background: rgba(127, 183, 131, 0.2);
+  color: var(--color-success);
+}
+
+.metric-card__change--negative {
+  background: rgba(229, 115, 115, 0.2);
+  color: var(--color-error);
+}
+
+.metric-card__change--neutral {
+  background: rgba(156, 163, 175, 0.2);
+  color: var(--color-text-muted);
+}
+
+.metric-card__value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.metric-card__title {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.metric-card__trend {
+  margin-top: 0.75rem;
+  height: 40px;
+}
+
+.mini-sparkline {
+  width: 100%;
+  height: 100%;
+}

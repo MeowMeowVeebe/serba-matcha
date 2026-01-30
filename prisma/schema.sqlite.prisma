@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================
+// Core schema for local SQLite (used by app/api + auth + RBAC + audit/security + transactions)
+// Backup of the previous full schema exists in prisma/schema.sqlite.full.prisma
+// =====================================
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  role          UserSimpleRole @default(customer)
+  phone         String?
+  avatar        String?
+
+  passwordAlgo String
+  passwordIter Int
+  passwordSalt String
+  passwordHash String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resetTokens   PasswordResetToken[]
+  refreshTokens RefreshToken[]
+  roles         UserRole[]
+  transactions  Transaction[]
+
+  @@index([createdAt])
+}
+
+enum UserSimpleRole {
+  admin
+  customer
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model RateLimitEvent {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String
+  userId       String?
+  ip           String?
+  targetUserId String?
+  targetEmail  String?
+  resource     String?
+  statusCode   Int?
+  meta         String?
+  metaPreview  String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([userId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([targetEmail, createdAt])
+  @@index([resource, createdAt])
+  @@index([statusCode, createdAt])
+  @@index([targetEmail, statusCode, createdAt])
+  @@index([resource, statusCode, createdAt])
+}
+
+model Permission {
+  id    String           @id @default(cuid())
+  name  String           @unique
+  roles RolePermission[]
+
+  @@index([name])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@index([name])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserRole {
+  id     String @id @default(cuid())
+  userId String
+  roleId String
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLogExportJob {
+  id                String          @id @default(cuid())
+  status            ExportJobStatus @default(pending)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  requestedByUserId String?
+  filters           String
+  fileName          String?
+  mimeType          String?
+  filePath          String?
+  rowsWritten       Int             @default(0)
+  leaseUntil        DateTime?
+  attempts          Int             @default(0)
+  csvBase64         String?
+  error             String?
+
+  @@index([status, createdAt])
+  @@index([requestedByUserId, createdAt])
+}
+
+enum ExportJobStatus {
+  pending
+  running
+  completed
+  failed
+  cancelled
+}
+
+model SecurityEvent {
+  id        String                @id @default(cuid())
+  event     String
+  severity  SecurityEventSeverity @default(info)
+  userId    String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime              @default(now())
+
+  @@index([severity])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum SecurityEventSeverity {
+  info
+  warning
+  danger
+}
+
+model UserSession {
+  id         String   @id @default(cuid())
+  userId     String
+  device     String
+  location   String?
+  ip         String?
+  userAgent  String?
+  isActive   Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  revokedAt  DateTime?
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([lastSeenAt])
+}
+
+model SellerProduct {
+  id           String        @id @default(cuid())
+  name         String
+  price        Int
+  stock        Int
+  category     String
+  description  String
+  image        String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@index([updatedAt])
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  orderId         String?  @unique
+  userId          String?
+  productId       String?
+  productName     String
+  price           Int
+  grossAmount     Int?
+  shippingCost    Int      @default(0)
+  status          String   @default("pending")
+  snapToken       String?
+  snapRedirectUrl String?
+  customerName    String?
+  customerEmail   String?
+  customerPhone   String?
+  items           Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product SellerProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  user    User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([productId])
+}

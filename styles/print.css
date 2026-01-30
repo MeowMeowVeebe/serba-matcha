@@ -1,0 +1,161 @@
+/* Print styles for dashboard reports */
+
+@media print {
+  /* Hide navigation and controls */
+  nav,
+  .dashboard-header button,
+  .dashboard-header select,
+  .ds-button,
+  button,
+  .date-range-picker__dropdown {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4 landscape;
+    margin: 1cm;
+  }
+
+  body {
+    font-size: 10pt;
+    color: #000;
+    background: white;
+  }
+
+  /* Dashboard layout adjustments */
+  .dashboard-container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .dashboard-header {
+    margin-bottom: 1rem;
+    page-break-after: avoid;
+  }
+
+  .dashboard-title {
+    font-size: 18pt;
+    margin-bottom: 0.5rem;
+  }
+
+  .dashboard-subtitle {
+    font-size: 10pt;
+  }
+
+  /* Metrics cards */
+  .dashboard-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    page-break-inside: avoid;
+  }
+
+  .metric-card {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+  }
+
+  /* Charts */
+  .dashboard-charts {
+    display: block;
+  }
+
+  .dashboard-charts > * {
+    page-break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  /* Cards */
+  .ds-card {
+    border: 1px solid #ddd;
+    box-shadow: none;
+    margin-bottom: 1rem;
+  }
+
+  /* Activity list */
+  .activity-list {
+    max-height: none;
+  }
+
+  .activity-item {
+    page-break-inside: avoid;
+  }
+
+  /* Charts - ensure visibility */
+  canvas {
+    max-width: 100%;
+    height: auto !important;
+  }
+
+  /* Remove unnecessary spacing */
+  .ds-card__body {
+    padding: 0.5rem;
+  }
+
+  /* Comparison banner */
+  .comparison-banner {
+    background: #f0f0f0 !important;
+    border: 1px solid #ccc !important;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    page-break-inside: avoid;
+  }
+
+  /* Print header */
+  .print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #333;
+  }
+
+  .print-header__logo {
+    font-size: 16pt;
+    font-weight: bold;
+  }
+
+  .print-header__date {
+    font-size: 9pt;
+    color: #666;
+  }
+
+  /* Print footer */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 8pt;
+    color: #666;
+    padding: 0.5rem;
+    border-top: 1px solid #ccc;
+  }
+}
+
+/* Print preview mode */
+.print-preview-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 9999;
+  overflow: auto;
+  padding: 2rem;
+}
+
+.print-preview-mode .dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
